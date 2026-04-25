@@ -70,8 +70,8 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
 
     async def async_log_reading(self, reading: Reading) -> None:
         self.last_reading = reading
-        await self._persist()
         self._dispatch(trigger="log_reading", now=_utcnow())
+        await self._persist()  # after dispatch — captures suppressions added during dispatch
         self.async_update_listeners()
 
     async def async_log_dose(
@@ -86,12 +86,13 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
             product_key=product_key,
             amount=amount,
         ))
-        await self._persist()
         self._dispatch(trigger="log_dose", now=_utcnow())
+        await self._persist()  # after dispatch — captures suppressions added during dispatch
         self.async_update_listeners()
 
     async def async_hourly_tick(self) -> None:
         self._dispatch(trigger="hourly", now=_utcnow())
+        await self._persist()
         self.async_update_listeners()
 
     def _dispatch(self, *, trigger: str, now: datetime) -> None:
@@ -110,6 +111,8 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
         if action.kind == "fire_event":
             category = action.payload["category"]
             subject = action.payload["subject"]
+            # Record suppression before firing — accept silent loss on a broken
+            # event handler rather than risk a tight retry loop.
             self.suppressions[(category, subject)] = now
             self.hass.bus.async_fire(f"{DOMAIN}.nudge", action.payload)
             # Persistent notification, fire-and-forget.
@@ -117,8 +120,11 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
         # set_entity / create_notification kinds reserved for future Actions.
 
     async def _notify(self, message: str) -> None:
-        from homeassistant.components.persistent_notification import async_create
-        async_create(self.hass, message, title="Spa Care")
+        try:
+            from homeassistant.components.persistent_notification import async_create
+            async_create(self.hass, message, title="Spa Care")
+        except Exception:
+            _LOGGER.exception("spa_care: failed to create persistent notification")
 
     async def _persist(self) -> None:
         payload = {

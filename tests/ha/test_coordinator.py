@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
@@ -14,6 +15,7 @@ NOW = datetime(2026, 4, 25, 12, 0, tzinfo=timezone.utc)
 def coordinator():
     hass = MagicMock()
     hass.bus.async_fire = MagicMock()
+    hass.async_create_task = lambda coro: asyncio.ensure_future(coro)
     store = AsyncMock()
     store.async_load = AsyncMock(return_value=None)
     store.async_save = AsyncMock()
