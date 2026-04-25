@@ -13,8 +13,12 @@ from .const import DOMAIN
 from .coordinator import SpaCareCoordinator
 from .domain.chemistry import classify_reading
 from .domain.models import ReadingState
-from .domain.products import get_product
-from .domain.rules import RETEST_DELAY, RETEST_WINDOW, TEST_OVERDUE_DAYS
+from .domain.rules import (
+    RETEST_DELAY,
+    RETEST_WINDOW,
+    TEST_OVERDUE_DAYS,
+    last_reading_driven_dose,
+)
 from .entity import SpaCareEntity
 
 _READING_FIELDS = {
@@ -87,19 +91,9 @@ class PostDoseRetestBinarySensor(SpaCareEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        # Find last reading-driven dose
-        last_dose = None
-        for d in reversed(self.coordinator.doses):
-            try:
-                product = get_product(d.product_key)
-            except KeyError:
-                continue
-            if product.target_reading is not None and product.direction is not None:
-                last_dose = d
-                break
+        last_dose = last_reading_driven_dose(tuple(self.coordinator.doses))
         if last_dose is None:
             return False
-        # If there's been a reading after the dose, retest is no longer due.
         if (
             self.coordinator.last_reading is not None
             and self.coordinator.last_reading.timestamp > last_dose.timestamp

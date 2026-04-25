@@ -122,7 +122,7 @@ def _schedule_due(state: RuleState, now: datetime) -> list[Action]:
 
 
 def _post_dose_retest(state: RuleState, now: datetime) -> list[Action]:
-    last_reading_dose = _last_reading_driven_dose(state.doses)
+    last_reading_dose = last_reading_driven_dose(state.doses)
     if last_reading_dose is None:
         return []
     age = now - last_reading_dose.timestamp
@@ -150,7 +150,7 @@ def _last_dose_by_product(doses: tuple[Dose, ...]) -> dict[str, Dose]:
     return out
 
 
-def _last_reading_driven_dose(doses: tuple[Dose, ...]) -> Dose | None:
+def last_reading_driven_dose(doses: tuple[Dose, ...]) -> Dose | None:
     candidates: list[Dose] = []
     for d in doses:
         try:
