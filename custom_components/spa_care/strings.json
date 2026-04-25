@@ -1,0 +1,16 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Spa Care",
+        "description": "Tell Spa Care about your tub.",
+        "data": {
+          "volume_l": "Tub volume (litres)"
+        }
+      }
+    },
+    "error": {
+      "invalid_volume": "Volume must be greater than zero."
+    }
+  }
+}
