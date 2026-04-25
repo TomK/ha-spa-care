@@ -48,7 +48,35 @@ log_dose:
       required: true
       example: brominating_granules
       selector:
-        text:
+        select:
+          mode: dropdown
+          options:
+            - label: "Brominating granules (~60% BCDMH)"
+              value: brominating_granules
+            - label: "Dry acid (sodium bisulphate)"
+              value: dry_acid
+            - label: "pH up (sodium carbonate)"
+              value: ph_up
+            - label: "TA increaser (sodium bicarbonate)"
+              value: ta_up
+            - label: "Calcium hardness increaser (calcium chloride)"
+              value: ch_up
+            - label: "Spa No Scale (sequestrant)"
+              value: spa_no_scale
+            - label: "Non-chlorine shock (MPS)"
+              value: mps_shock
+            - label: "Filter cartridge cleaner"
+              value: filter_cleaner
+            - label: "Surface cleaner"
+              value: surface_cleaner
+            - label: "Defoamer"
+              value: defoamer
+            - label: "Clarifier"
+              value: clarifier
+            - label: "Sodium bromide reserve"
+              value: sodium_bromide
+            - label: "Bromine tablets (BCDMH 20 g floater)"
+              value: bromine_tablets
     amount:
       name: Amount (g for solids, ml for liquids)
       required: true
