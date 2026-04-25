@@ -1,0 +1,61 @@
+log_reading:
+  name: Log reading
+  description: Log a test-strip reading. Any subset of fields.
+  fields:
+    total_bromine:
+      name: Total Bromine (ppm)
+      example: 4.2
+      selector:
+        number:
+          min: 0
+          max: 20
+          step: 0.1
+          mode: box
+    ph:
+      name: pH
+      example: 7.4
+      selector:
+        number:
+          min: 6
+          max: 9
+          step: 0.1
+          mode: box
+    total_alkalinity:
+      name: Total Alkalinity (ppm)
+      example: 100
+      selector:
+        number:
+          min: 0
+          max: 300
+          step: 10
+          mode: box
+    calcium_hardness:
+      name: Calcium Hardness (ppm)
+      example: 180
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 10
+          mode: box
+
+log_dose:
+  name: Log dose
+  description: Log a chemical dose. Resets retest/cadence timers.
+  fields:
+    product:
+      name: Product
+      required: true
+      example: brominating_granules
+      selector:
+        text:
+    amount:
+      name: Amount (g for solids, ml for liquids)
+      required: true
+      example: 10
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 1
+          mode: box

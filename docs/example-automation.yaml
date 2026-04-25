@@ -1,0 +1,14 @@
+# Place this in your HA automations.yaml (or via the UI).
+# Routes spa_care.nudge events to the persistent_notification service plus
+# your mobile notify target. Adjust to taste.
+
+alias: Spa Care — route nudges
+trigger:
+  - platform: event
+    event_type: spa_care.nudge
+action:
+  - service: notify.mobile_app_your_phone   # CHANGE to your notify target
+    data:
+      title: "Spa Care — {{ trigger.event.data.category }}"
+      message: "{{ trigger.event.data.message }}"
+mode: parallel
