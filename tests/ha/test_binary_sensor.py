@@ -56,3 +56,14 @@ def test_retest_due_false_outside_window():
     coord = _coord(doses=[Dose(timestamp=last, product_key="brominating_granules", amount=10)])
     s = PostDoseRetestBinarySensor(coord, entry_id="x")
     assert s.is_on is False
+
+
+def test_retest_due_false_when_reading_after_dose():
+    dosed = datetime.now(timezone.utc) - timedelta(hours=3)
+    reading_after = datetime.now(timezone.utc) - timedelta(hours=1)
+    coord = _coord(
+        last_reading=Reading(timestamp=reading_after, total_bromine=4.0),
+        doses=[Dose(timestamp=dosed, product_key="brominating_granules", amount=10)],
+    )
+    s = PostDoseRetestBinarySensor(coord, entry_id="x")
+    assert s.is_on is False

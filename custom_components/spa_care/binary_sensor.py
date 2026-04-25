@@ -46,6 +46,7 @@ async def async_setup_entry(
 
 
 class TestOverdueBinarySensor(SpaCareEntity, BinarySensorEntity):
+    __test__ = False  # not a pytest test class
     _attr_name = "Test Overdue"
 
     def __init__(self, coordinator, *, entry_id):
