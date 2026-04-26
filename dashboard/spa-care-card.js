@@ -1,9 +1,8 @@
 import { LitElement, html, css } from "https://unpkg.com/lit?module";
 
-// Mirrors domain/products.py — keep in sync. unit reflects the product's
-// form (g for solids, ml for liquids). typicalPer1000L is set for
-// schedule-driven products that have a recommended cadence dose; the card
-// multiplies it by the tub volume to suggest an amount in the form.
+// Mirrors domain/products.py — keep in sync. PRODUCTS lists chemicals
+// you put INTO the water (dosed, with an amount). MAINTENANCE_PRODUCTS
+// lists physical actions (no amount; logged via spa_care.log_maintenance).
 const PRODUCTS = [
   { value: "brominating_granules", label: "Brominating granules (~60% BCDMH)", unit: "g" },
   { value: "dry_acid", label: "Dry acid (sodium bisulphate)", unit: "g" },
@@ -12,12 +11,15 @@ const PRODUCTS = [
   { value: "ch_up", label: "Calcium hardness increaser (calcium chloride)", unit: "g" },
   { value: "spa_no_scale", label: "Spa No Scale (sequestrant)", unit: "ml", typicalPer1000L: 40 },
   { value: "mps_shock", label: "Non-chlorine shock (MPS)", unit: "g", typicalPer1000L: 10 },
-  { value: "filter_cleaner", label: "Filter cartridge cleaner", unit: "ml" },
-  { value: "surface_cleaner", label: "Surface cleaner", unit: "ml" },
   { value: "defoamer", label: "Defoamer", unit: "ml" },
   { value: "clarifier", label: "Clarifier", unit: "ml" },
   { value: "sodium_bromide", label: "Sodium bromide reserve", unit: "g" },
   { value: "bromine_tablets", label: "Bromine tablets (BCDMH 20 g floater)", unit: "g" },
+];
+
+const MAINTENANCE_PRODUCTS = [
+  { value: "filter_cleaner", label: "Mark filter cleaned" },
+  { value: "surface_cleaner", label: "Mark surfaces wiped" },
 ];
 
 class SpaCareCard extends LitElement {
@@ -82,6 +84,12 @@ class SpaCareCard extends LitElement {
       align-items: center;
       gap: 8px;
       margin-bottom: 8px;
+    }
+    .maintenance-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0;
     }
     .retest {
       margin-top: 16px;
@@ -288,6 +296,24 @@ class SpaCareCard extends LitElement {
     `;
   }
 
+  _renderMaintenance() {
+    const onClick = (product) => {
+      this.hass.callService("spa_care", "log_maintenance", { product });
+    };
+    return html`
+      <div class="section-title">Maintenance</div>
+      <div class="maintenance-row">
+        ${MAINTENANCE_PRODUCTS.map(
+          (m) => html`
+            <mwc-button outlined @click=${() => onClick(m.value)}>
+              ${m.label}
+            </mwc-button>
+          `
+        )}
+      </div>
+    `;
+  }
+
   _renderRetest(nextRetestEntity) {
     if (!nextRetestEntity) return html``;
     const state = this.hass.states[nextRetestEntity.entity_id];
@@ -340,6 +366,7 @@ class SpaCareCard extends LitElement {
           ${this._renderSecondaryButton()}
         </div>
         ${this._renderCustomDoseForm(entities.volume)}
+        ${this._renderMaintenance()}
         ${this._renderRetest(entities.nextRetest)}
       </ha-card>
     `;

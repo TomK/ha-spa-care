@@ -23,6 +23,7 @@ class ProductForm(Enum):
 class ProductMode(Enum):
     READING_DRIVEN = "reading_driven"
     SCHEDULE_DRIVEN = "schedule_driven"
+    MAINTENANCE = "maintenance"  # scheduled, no amount (filter clean, surface wipe)
     MANUAL = "manual"
 
 
@@ -65,6 +66,17 @@ class Dose:
     timestamp: datetime
     product_key: str
     amount: float
+
+
+@dataclass
+class MaintenanceAction:
+    """Logged maintenance event (e.g. filter cleaned, waterline wiped).
+
+    No amount — the only piece of data that matters is "this happened at
+    this timestamp", which clears the schedule_due nudge for the product.
+    """
+    timestamp: datetime
+    product_key: str
 
 
 @dataclass

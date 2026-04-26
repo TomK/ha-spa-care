@@ -41,7 +41,7 @@ log_reading:
 
 log_dose:
   name: Log dose
-  description: Log a chemical dose. Resets retest/cadence timers.
+  description: Log a chemical dose to the water. Resets retest/cadence timers.
   fields:
     product:
       name: Product
@@ -65,10 +65,6 @@ log_dose:
               value: spa_no_scale
             - label: "Non-chlorine shock (MPS)"
               value: mps_shock
-            - label: "Filter cartridge cleaner"
-              value: filter_cleaner
-            - label: "Surface cleaner"
-              value: surface_cleaner
             - label: "Defoamer"
               value: defoamer
             - label: "Clarifier"
@@ -87,3 +83,20 @@ log_dose:
           max: 1000
           step: 1
           mode: box
+
+log_maintenance:
+  name: Log maintenance action
+  description: Record that a maintenance action (filter cleaned, surface wiped) was completed. Resets the schedule_due timer for the action.
+  fields:
+    product:
+      name: Action
+      required: true
+      example: filter_cleaner
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "Filter cartridge cleaner"
+              value: filter_cleaner
+            - label: "Surface cleaner"
+              value: surface_cleaner

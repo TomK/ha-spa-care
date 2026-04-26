@@ -10,7 +10,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION
-from .domain.models import Action, Dose, Reading, TargetRange
+from .domain.models import Action, Dose, MaintenanceAction, Reading, TargetRange
 from .domain.recommendations import DEFAULT_TARGETS
 from .domain.rules import RuleState, evaluate_rules
 
@@ -42,6 +42,7 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
         self._store = store or Store(hass, STORAGE_VERSION, f"{STORAGE_KEY}_{entry_id}")
         self.last_reading: Reading | None = None
         self.doses: list[Dose] = []
+        self.actions: list[MaintenanceAction] = []
         self.suppressions: dict[tuple[str, str], datetime] = {}
 
     async def async_initialize(self) -> None:
@@ -64,6 +65,13 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
                 amount=d["amount"],
             )
             for d in data.get("doses", [])
+        ]
+        self.actions = [
+            MaintenanceAction(
+                timestamp=datetime.fromisoformat(a["timestamp"]),
+                product_key=a["product_key"],
+            )
+            for a in data.get("actions", [])
         ]
         self.suppressions = {
             (k.split("|")[0], k.split("|")[1]): datetime.fromisoformat(v)
@@ -109,6 +117,20 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
         await self._persist()  # after dispatch — captures suppressions added during dispatch
         self.async_update_listeners()
 
+    async def async_log_maintenance(
+        self,
+        *,
+        product_key: str,
+        when: datetime | None = None,
+    ) -> None:
+        self.actions.append(MaintenanceAction(
+            timestamp=when or _utcnow(),
+            product_key=product_key,
+        ))
+        self._dispatch(trigger="log_maintenance", now=_utcnow())
+        await self._persist()
+        self.async_update_listeners()
+
     async def async_hourly_tick(self) -> None:
         self._dispatch(trigger="hourly", now=_utcnow())
         await self._persist()
@@ -120,6 +142,7 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
             volume_l=self.volume_l,
             last_reading=self.last_reading,
             doses=tuple(self.doses),
+            actions=tuple(self.actions),
             suppressions=self.suppressions,
         )
         actions = evaluate_rules(state, now=now, trigger=trigger)
@@ -165,6 +188,13 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
                     "amount": d.amount,
                 }
                 for d in self.doses
+            ],
+            "actions": [
+                {
+                    "timestamp": a.timestamp.isoformat(),
+                    "product_key": a.product_key,
+                }
+                for a in self.actions
             ],
             "suppressions": {
                 f"{cat}|{subj}": ts.isoformat()

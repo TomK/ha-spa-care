@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
-from custom_components.spa_care.domain.models import Dose, Reading
+from custom_components.spa_care.domain.models import Dose, MaintenanceAction, Reading
 from custom_components.spa_care.domain.recommendations import DEFAULT_TARGETS
 from custom_components.spa_care.domain.rules import RuleState, evaluate_rules
 
@@ -18,6 +18,7 @@ def _state(
     *,
     last_reading: Reading | None = None,
     doses: list[Dose] | None = None,
+    actions: list[MaintenanceAction] | None = None,
     suppressions: dict[tuple[str, str], datetime] | None = None,
 ) -> RuleState:
     return RuleState(
@@ -25,6 +26,7 @@ def _state(
         volume_l=VOLUME_L,
         last_reading=last_reading,
         doses=tuple(doses or ()),
+        actions=tuple(actions or ()),
         suppressions=suppressions or {},
     )
 
@@ -88,6 +90,28 @@ def test_schedule_due_does_not_fire_within_cadence():
     nudges = [a.payload for a in actions if a.kind == "fire_event"]
     assert not any(
         n["category"] == "schedule_due" and n["subject"] == "spa_no_scale"
+        for n in nudges
+    )
+
+
+def test_maintenance_schedule_due_fires_when_no_action_logged():
+    state = _state()  # no doses or actions
+    actions = evaluate_rules(state, now=NOW, trigger="hourly")
+    nudges = [a.payload for a in actions if a.kind == "fire_event"]
+    subjects = [n["subject"] for n in nudges if n["category"] == "schedule_due"]
+    assert "filter_cleaner" in subjects
+    assert "surface_cleaner" in subjects
+
+
+def test_maintenance_schedule_due_clears_after_action_logged():
+    last_action = NOW - timedelta(days=2)
+    state = _state(
+        actions=[MaintenanceAction(timestamp=last_action, product_key="surface_cleaner")],
+    )
+    actions = evaluate_rules(state, now=NOW, trigger="hourly")
+    nudges = [a.payload for a in actions if a.kind == "fire_event"]
+    assert not any(
+        n["category"] == "schedule_due" and n["subject"] == "surface_cleaner"
         for n in nudges
     )
 

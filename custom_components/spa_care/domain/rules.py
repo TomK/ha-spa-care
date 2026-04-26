@@ -9,8 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from .models import Action, Dose, Reading, TargetRange
-from .products import get_product, scheduled_products
+from .models import Action, Dose, MaintenanceAction, Reading, TargetRange
+from .products import get_product, maintenance_products, scheduled_products
 from .recommendations import evaluate_reading
 
 TEST_OVERDUE_DAYS = 5
@@ -29,6 +29,7 @@ class RuleState:
     volume_l: float
     last_reading: Reading | None
     doses: tuple[Dose, ...]
+    actions: tuple[MaintenanceAction, ...]
     suppressions: dict[tuple[str, str], datetime]
 
 
@@ -105,9 +106,16 @@ def _subject_for_recommendation(product_key: str) -> str | None:
 def _schedule_due(state: RuleState, now: datetime) -> list[Action]:
     actions: list[Action] = []
     last_dose_by_key = _last_dose_by_product(state.doses)
+    last_action_by_key = _last_action_by_product(state.actions)
+
+    candidates: list[tuple] = []
     for product in scheduled_products():
+        candidates.append((product, last_dose_by_key.get(product.key)))
+    for product in maintenance_products():
+        candidates.append((product, last_action_by_key.get(product.key)))
+
+    for product, last in candidates:
         cadence = timedelta(days=product.cadence_days or 0)
-        last = last_dose_by_key.get(product.key)
         if last is not None and (now - last.timestamp) < cadence:
             continue
         if _suppressed(state, "schedule_due", product.key, cadence, now):
@@ -147,6 +155,17 @@ def _last_dose_by_product(doses: tuple[Dose, ...]) -> dict[str, Dose]:
         existing = out.get(d.product_key)
         if existing is None or d.timestamp > existing.timestamp:
             out[d.product_key] = d
+    return out
+
+
+def _last_action_by_product(
+    actions: tuple[MaintenanceAction, ...],
+) -> dict[str, MaintenanceAction]:
+    out: dict[str, MaintenanceAction] = {}
+    for a in actions:
+        existing = out.get(a.product_key)
+        if existing is None or a.timestamp > existing.timestamp:
+            out[a.product_key] = a
     return out
 
 

@@ -30,6 +30,12 @@ LOG_DOSE_SCHEMA = vol.Schema(
     }
 )
 
+LOG_MAINTENANCE_SCHEMA = vol.Schema(
+    {
+        vol.Required("product"): str,
+    }
+)
+
 
 async def async_register_services(hass: HomeAssistant, coordinator) -> None:
     async def _log_reading(call: ServiceCall) -> None:
@@ -48,5 +54,11 @@ async def async_register_services(hass: HomeAssistant, coordinator) -> None:
             amount=call.data["amount"],
         )
 
+    async def _log_maintenance(call: ServiceCall) -> None:
+        await coordinator.async_log_maintenance(
+            product_key=call.data["product"],
+        )
+
     hass.services.async_register(DOMAIN, "log_reading", _log_reading, schema=LOG_READING_SCHEMA)
     hass.services.async_register(DOMAIN, "log_dose", _log_dose, schema=LOG_DOSE_SCHEMA)
+    hass.services.async_register(DOMAIN, "log_maintenance", _log_maintenance, schema=LOG_MAINTENANCE_SCHEMA)

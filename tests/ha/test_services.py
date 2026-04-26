@@ -7,6 +7,7 @@ import voluptuous as vol
 from custom_components.spa_care.const import DOMAIN
 from custom_components.spa_care.services import (
     LOG_DOSE_SCHEMA,
+    LOG_MAINTENANCE_SCHEMA,
     LOG_READING_SCHEMA,
     async_register_services,
 )
@@ -28,13 +29,21 @@ def test_log_dose_schema_requires_product_and_amount():
         LOG_DOSE_SCHEMA({"product": "x"})  # no amount
 
 
-async def test_async_register_services_registers_two_services():
+def test_log_maintenance_schema_requires_product_only():
+    LOG_MAINTENANCE_SCHEMA({"product": "filter_cleaner"})
+    with pytest.raises(vol.Invalid):
+        LOG_MAINTENANCE_SCHEMA({})
+
+
+async def test_async_register_services_registers_three_services():
     hass = MagicMock()
     hass.services.async_register = MagicMock()
     coord = MagicMock()
     coord.async_log_reading = AsyncMock()
     coord.async_log_dose = AsyncMock()
+    coord.async_log_maintenance = AsyncMock()
     await async_register_services(hass, coord)
     names = [call.args[1] for call in hass.services.async_register.call_args_list]
     assert "log_reading" in names
     assert "log_dose" in names
+    assert "log_maintenance" in names

@@ -71,18 +71,21 @@ DEFAULT_PRODUCTS: tuple[Product, ...] = (
         cadence_days=7,
         typical_dose_per_1000L=10.0,  # g/1000 L weekly baseline
     ),
+    # Maintenance-only products — scheduled but not dosed into the water.
+    # Filter cleaner soaks the cartridge in a separate bowl; surface cleaner
+    # wipes the waterline. Logged via spa_care.log_maintenance, no amount.
     Product(
         key="filter_cleaner",
         name="Filter cartridge cleaner",
         form=ProductForm.LIQUID,
-        mode=ProductMode.SCHEDULE_DRIVEN,
+        mode=ProductMode.MAINTENANCE,
         cadence_days=30,
     ),
     Product(
         key="surface_cleaner",
         name="Surface cleaner",
         form=ProductForm.LIQUID,
-        mode=ProductMode.SCHEDULE_DRIVEN,
+        mode=ProductMode.MAINTENANCE,
         cadence_days=7,
     ),
     # Manual-only products (no recommendation, no nudge — logged for history).
@@ -128,3 +131,7 @@ def products_for_reading(reading: str, *, direction: str | None = None) -> list[
 
 def scheduled_products() -> list[Product]:
     return [p for p in DEFAULT_PRODUCTS if p.mode is ProductMode.SCHEDULE_DRIVEN]
+
+
+def maintenance_products() -> list[Product]:
+    return [p for p in DEFAULT_PRODUCTS if p.mode is ProductMode.MAINTENANCE]
