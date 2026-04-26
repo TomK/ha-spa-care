@@ -248,6 +248,25 @@ class SpaCareCard extends LitElement {
     `;
   }
 
+  _renderRetest(nextRetestEntity) {
+    if (!nextRetestEntity) return html``;
+    const state = this.hass.states[nextRetestEntity.entity_id];
+    if (!state || state.state === "unknown" || state.state === "unavailable") {
+      return html``;
+    }
+    const target = new Date(state.state);
+    if (Number.isNaN(target.getTime())) return html``;
+    const diffMs = target.getTime() - Date.now();
+    const sign = diffMs >= 0 ? "in" : "ago";
+    const abs = Math.abs(diffMs);
+    const hours = Math.floor(abs / 3_600_000);
+    const minutes = Math.floor((abs % 3_600_000) / 60_000);
+    const text = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    return html`
+      <div class="retest">Retest ${sign}: ${text}</div>
+    `;
+  }
+
   render() {
     if (!this.hass || !this._config) {
       return html`<ha-card><div class="error">Loading…</div></ha-card>`;
@@ -281,6 +300,7 @@ class SpaCareCard extends LitElement {
           ${this._renderSecondaryButton()}
         </div>
         ${this._renderCustomDoseForm()}
+        ${this._renderRetest(entities.nextRetest)}
       </ha-card>
     `;
   }
