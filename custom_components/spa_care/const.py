@@ -12,6 +12,7 @@ STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}_state"
 
 # Config-entry option keys
+CONF_NAME = "name"
 CONF_VOLUME_L = "volume_l"
 CONF_TARGETS = "targets"
 CONF_PRODUCTS = "products"          # list of selected product keys

@@ -5,11 +5,13 @@
         "title": "Spa Care",
         "description": "Tell Spa Care about your tub.",
         "data": {
+          "name": "Name (e.g. Hot Tub, Pool Spa)",
           "volume_l": "Tub volume (litres)"
         }
       }
     },
     "error": {
+      "invalid_name": "Name must not be empty.",
       "invalid_volume": "Volume must be greater than zero."
     }
   }
