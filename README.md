@@ -12,9 +12,14 @@ install **Spa Care** from HACS and restart Home Assistant.
 ## Configure
 
 `Settings → Devices & Services → Add Integration → Spa Care`. The config
-flow only asks for your tub volume in litres — default target ranges and
-the full product list are applied automatically and can be tuned later in
-the integration's options (when implemented) or by editing the source.
+flow asks for a name (so multiple spas can be told apart) and the tub
+volume in litres. Default target ranges and the full product list are
+applied automatically and can be tuned later in the integration's options
+(when implemented) or by editing the source.
+
+Add the integration once per tub. Each instance gets its own device with
+the chosen name, isolated state (last reading, doses, suppressions), and
+its own set of entities prefixed by the spa name.
 
 ## What it gives you
 
@@ -40,6 +45,13 @@ Once configured, the **Spa Care** device exposes:
   predicted to fire (HA renders this as relative time, e.g. "in 1 h 23 m").
 - **Per-reading `*_out_of_range` binary sensors** (TB, pH, TA, CH).
 - **`Last Test Age`** sensor: minutes since your last reading.
+
+## Custom Lovelace card (optional)
+
+A vanilla-JS card that drives the workflow from a single dashboard tile
+ships in [`dashboard/`](dashboard/). It pulls all entities from a
+`device_id` you configure, so it works with multiple spas. See
+[`dashboard/README.md`](dashboard/README.md) for installation.
 
 ## Day-to-day workflow
 
