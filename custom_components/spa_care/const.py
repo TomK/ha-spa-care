@@ -5,7 +5,7 @@ HA-glue identifiers and tunables that the coordinator/config flow need.
 from __future__ import annotations
 
 DOMAIN = "spa_care"
-PLATFORMS = ("sensor", "binary_sensor", "number")
+PLATFORMS = ("sensor", "binary_sensor", "number", "button")
 
 # HA Store keys
 STORAGE_VERSION = 1
