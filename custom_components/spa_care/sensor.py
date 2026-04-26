@@ -9,9 +9,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from homeassistant.components.sensor import SensorDeviceClass
+
 from .const import DOMAIN
 from .coordinator import SpaCareCoordinator
 from .domain.recommendations import evaluate_reading
+from .domain.rules import RETEST_DELAY, RETEST_WINDOW, last_reading_driven_dose
 from .entity import SpaCareEntity
 
 
@@ -32,6 +35,7 @@ async def async_setup_entry(
                       name="Calcium Hardness", unit="ppm"),
         LastTestAgeSensor(coord, entry_id=entry.entry_id),
         RecommendedActionSensor(coord, entry_id=entry.entry_id),
+        NextRetestAtSensor(coord, entry_id=entry.entry_id),
     ])
 
 
@@ -96,3 +100,25 @@ class RecommendedActionSensor(SpaCareEntity, SensorEntity):
                 for r in recs
             ]
         }
+
+
+class NextRetestAtSensor(SpaCareEntity, SensorEntity):
+    _attr_name = "Next Retest At"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(self, coordinator, *, entry_id):
+        super().__init__(coordinator, entry_id=entry_id, suffix="next_retest_at")
+
+    @property
+    def native_value(self) -> datetime | None:
+        last_dose = last_reading_driven_dose(tuple(self.coordinator.doses))
+        if last_dose is None:
+            return None
+        if (
+            self.coordinator.last_reading is not None
+            and self.coordinator.last_reading.timestamp > last_dose.timestamp
+        ):
+            return None
+        if datetime.now(timezone.utc) - last_dose.timestamp > RETEST_WINDOW:
+            return None
+        return last_dose.timestamp + RETEST_DELAY
