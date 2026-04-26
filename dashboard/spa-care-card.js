@@ -111,8 +111,11 @@ class SpaCareCard extends LitElement {
   _resolveEntities() {
     const all = Object.values(this.hass.entities || {});
     const mine = all.filter((e) => e.device_id === this._config.device_id);
+    // hass.entities is the abbreviated display registry — it has device_id
+    // but not unique_id. Match by entity_id suffix instead. Safe because
+    // we're already constrained to one device.
     const byKey = (suffix) =>
-      mine.find((e) => (e.unique_id || "").endsWith(suffix));
+      mine.find((e) => (e.entity_id || "").endsWith(suffix));
     return {
       tb: byKey("_total_bromine"),
       ph: byKey("_ph"),
