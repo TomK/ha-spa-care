@@ -1,18 +1,23 @@
 # Spa Care Lovelace Card
 
-Drop-in card for the [Spa Care integration](../README.md). One file,
-no build step.
+The card ships **inside the integration** and registers itself
+automatically — there's nothing to copy and no Lovelace resource to
+add manually.
 
-## Install
+## How it works
 
-1. Copy `spa-care-card.js` into your HA `config/www/` folder.
-2. (You may need to enable Advanced Mode on your user profile first.)
-   Add it as a Lovelace resource — **Settings → Dashboards → ⋮ →
-   Resources → Add Resource**:
-   - URL: `/local/spa-care-card.js`
-   - Type: **JavaScript Module**
-3. Hard-refresh the browser (Cmd-Shift-R / Ctrl-Shift-R).
-4. On a dashboard in edit mode, **+ Add Card → search "Spa Care"**.
+When the integration loads, it serves the bundled
+`custom_components/spa_care/spa-care-card.js` at the URL
+`/spa_care/spa-care-card.js` and calls `add_extra_js_url(...)` so the
+JS module is loaded on every Lovelace dashboard. The card registers
+itself as `custom:spa-care-card`. Idempotent across config-entry
+reloads.
+
+## Add the card to a dashboard
+
+1. After installing (or reloading) the integration, hard-refresh the
+   browser (Cmd-Shift-R / Ctrl-Shift-R).
+2. On a dashboard in edit mode → **+ Add Card → search "Spa Care"**.
    The visual editor opens with a device dropdown filtered to your
    spa_care devices — pick one and save. No YAML needed.
 
@@ -43,6 +48,18 @@ no build step.
 
 Install the integration once per tub, then add one card per device.
 
+## Migrating from the old manual install
+
+If you set the card up manually before this auto-registration landed,
+you'll have leftover bits to clean up:
+
+1. Delete the file at `/config/www/spa-care-card.js` (no longer used).
+2. **Settings → Dashboards → ⋮ → Resources** → remove the
+   `/local/spa-care-card.js` resource entry.
+3. Restart HA. The card will re-appear at the new URL automatically and
+   any `custom:spa-care-card` references on your dashboards keep working
+   (the element name is the same).
+
 ## Troubleshooting
 
 - *"Configure a device"* → the `device_id` doesn't resolve. Re-pick via
@@ -50,7 +67,7 @@ Install the integration once per tub, then add one card per device.
 - *"Spa Care card is incompatible…"* → the device exists but lacks the
   expected entities. Reload the integration entry; if entities are
   missing, the integration may have failed setup (check HA logs).
-- Card doesn't appear in card-picker → confirm the resource was added
-  with type **JavaScript Module** and that you hard-refreshed the
-  browser. Sometimes HA caches the old resource version aggressively;
-  a one-shot fix is to edit the resource URL to add `?v=2` and save.
+- Card doesn't appear in card-picker → hard-refresh the browser. If the
+  HA log shows `failed to register frontend card`, check that the JS
+  file ships inside `custom_components/spa_care/` (HACS only ships that
+  folder).

@@ -64,12 +64,18 @@ Two service entry points record what you've done:
 The `log_reading` service rounds out the trio for entering test-strip
 readings programmatically.
 
-## Custom Lovelace card (optional)
+## Custom Lovelace card
 
-A vanilla-JS card that drives the workflow from a single dashboard tile
-ships in [`dashboard/`](dashboard/). It pulls all entities from a
-`device_id` you configure, so it works with multiple spas. See
-[`dashboard/README.md`](dashboard/README.md) for installation.
+The integration ships with a custom Lovelace card that drives the whole
+workflow from a single dashboard tile, and **registers itself
+automatically** — no manual copy, no Lovelace resource to add. Just
+hard-refresh after installing the integration, edit a dashboard, and
+**+ Add Card → search "Spa Care"**. Pick the spa device from the
+dropdown and you're done.
+
+See [`dashboard/README.md`](dashboard/README.md) for what the card
+contains and a one-line YAML alternative if you prefer that to the
+visual editor.
 
 ## Day-to-day workflow
 
