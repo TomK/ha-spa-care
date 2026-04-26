@@ -38,7 +38,7 @@ async def async_setup_entry(
                       name="Total Alkalinity", unit="ppm",
                       min_v=0.0, max_v=300.0, step=10.0),
         ReadingNumber(coord, entry_id=entry.entry_id, field="calcium_hardness",
-                      name="Calcium Hardness", unit="ppm",
+                      name="Hardness", unit="ppm",
                       min_v=0.0, max_v=1000.0, step=10.0),
     ])
 
