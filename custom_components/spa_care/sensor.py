@@ -15,6 +15,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import SpaCareCoordinator
+from .domain.models import ProductForm
+from .domain.products import get_product
 from .domain.recommendations import evaluate_reading
 from .domain.rules import RETEST_DELAY, RETEST_WINDOW, last_reading_driven_dose
 from .entity import SpaCareEntity
@@ -63,23 +65,28 @@ class RecommendedActionSensor(SpaCareEntity, SensorEntity):
         recs = evaluate_reading(last, self.coordinator.targets, self.coordinator.volume_l)
         if not recs:
             return "None — looking good"
-        top = recs[0]
-        if top.product_key == "__recheck__":
-            return top.reason
-        return f"Add {top.amount:g} of {top.product_key} — {top.reason}"
+        if recs[0].product_key == "__recheck__":
+            return " · ".join(r.reason for r in recs)
+        return " · ".join(_format_action(r) for r in recs)
 
     @property
     def extra_state_attributes(self):
         last = self.coordinator.last_reading
         if last is None:
-            return {"all_recommendations": []}
+            return {"actions": []}
         recs = evaluate_reading(last, self.coordinator.targets, self.coordinator.volume_l)
-        return {
-            "all_recommendations": [
-                {"product": r.product_key, "amount": r.amount, "reason": r.reason}
-                for r in recs
-            ]
-        }
+        if recs and recs[0].product_key == "__recheck__":
+            return {"actions": [r.reason for r in recs]}
+        return {"actions": [_format_action(r) for r in recs]}
+
+
+def _format_action(rec) -> str:
+    try:
+        product = get_product(rec.product_key)
+        unit = "ml" if product.form is ProductForm.LIQUID else "g"
+        return f"Add {rec.amount:g}{unit} of {product.name}"
+    except KeyError:
+        return f"Add {rec.amount:g} of {rec.product_key}"
 
 
 class NextRetestAtSensor(SpaCareEntity, SensorEntity):

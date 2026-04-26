@@ -26,11 +26,91 @@ def test_last_test_age_sensor_reports_minutes():
     assert 36 <= s.native_value <= 38
 
 
-def test_recommended_action_sensor_returns_top_text():
-    coord = _coord(Reading(timestamp=datetime.now(timezone.utc), total_bromine=2.0))
+def test_recommended_action_sensor_no_reading():
+    coord = _coord(None)
     s = RecommendedActionSensor(coord, entry_id="x")
-    # Triggers a re-eval inside the sensor; just assert it's a string and not None.
-    assert isinstance(s.native_value, str)
+    assert s.native_value == "No reading yet"
+
+
+def test_recommended_action_sensor_all_in_range():
+    coord = _coord(Reading(
+        timestamp=datetime.now(timezone.utc),
+        total_bromine=4.0, ph=7.4, total_alkalinity=100, calcium_hardness=180,
+    ))
+    s = RecommendedActionSensor(coord, entry_id="x")
+    assert s.native_value == "None — looking good"
+
+
+def test_recommended_action_sensor_single_action():
+    coord = _coord(Reading(
+        timestamp=datetime.now(timezone.utc),
+        total_bromine=2.0, ph=7.4, total_alkalinity=100, calcium_hardness=180,
+    ))
+    s = RecommendedActionSensor(coord, entry_id="x")
+    assert "Brominating granules" in s.native_value
+    assert "g of " in s.native_value
+
+
+def test_recommended_action_sensor_multiple_actions_joined_in_priority_order():
+    # TB low (priority 1), pH high (priority 2)
+    coord = _coord(Reading(
+        timestamp=datetime.now(timezone.utc),
+        total_bromine=2.0, ph=7.9, total_alkalinity=100, calcium_hardness=180,
+    ))
+    s = RecommendedActionSensor(coord, entry_id="x")
+    value = s.native_value
+    # Both products should appear
+    assert "Brominating granules" in value
+    assert "Dry acid" in value
+    # TB recommendation should come before pH (priority 1 before priority 2)
+    assert value.index("Brominating granules") < value.index("Dry acid")
+    # Joined by separator
+    assert " · " in value
+
+
+def test_recommended_action_sensor_recheck_lists_all_oob_reasons():
+    coord = _coord(Reading(
+        timestamp=datetime.now(timezone.utc),
+        total_bromine=99.0, ph=99.0,  # both out of band
+    ))
+    s = RecommendedActionSensor(coord, entry_id="x")
+    value = s.native_value.lower()
+    assert "tb" in value
+    assert "ph" in value
+    assert "recheck" in value
+
+
+def test_recommended_action_sensor_attributes_actions_list():
+    coord = _coord(Reading(
+        timestamp=datetime.now(timezone.utc),
+        total_bromine=2.0, ph=7.9, total_alkalinity=100, calcium_hardness=180,
+    ))
+    s = RecommendedActionSensor(coord, entry_id="x")
+    actions = s.extra_state_attributes["actions"]
+    assert isinstance(actions, list)
+    assert len(actions) == 2
+    assert "Brominating granules" in actions[0]
+    assert "Dry acid" in actions[1]
+
+
+def test_recommended_action_sensor_attributes_empty_when_in_range():
+    coord = _coord(Reading(
+        timestamp=datetime.now(timezone.utc),
+        total_bromine=4.0, ph=7.4, total_alkalinity=100, calcium_hardness=180,
+    ))
+    s = RecommendedActionSensor(coord, entry_id="x")
+    assert s.extra_state_attributes == {"actions": []}
+
+
+def test_recommended_action_sensor_attributes_recheck_uses_reason_text():
+    coord = _coord(Reading(
+        timestamp=datetime.now(timezone.utc),
+        total_bromine=99.0,
+    ))
+    s = RecommendedActionSensor(coord, entry_id="x")
+    actions = s.extra_state_attributes["actions"]
+    assert len(actions) == 1
+    assert "recheck" in actions[0].lower()
 
 
 def test_next_retest_at_returns_dose_timestamp_plus_delay():
