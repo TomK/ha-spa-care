@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -84,7 +85,7 @@ class RecommendedActionSensor(SpaCareEntity, SensorEntity):
 class TubVolumeSensor(SpaCareEntity, SensorEntity):
     _attr_name = "Tub Volume"
     _attr_native_unit_of_measurement = "L"
-    _attr_entity_category = "diagnostic"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator, *, entry_id):
         super().__init__(coordinator, entry_id=entry_id, suffix="volume")
