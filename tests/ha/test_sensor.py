@@ -69,9 +69,9 @@ def test_recommended_action_sensor_multiple_actions_joined_in_priority_order():
     value = s.native_value
     # Both products should appear
     assert "Brominating granules" in value
-    assert "Dry acid" in value
+    assert "pH down" in value
     # TB recommendation should come before pH (priority 1 before priority 2)
-    assert value.index("Brominating granules") < value.index("Dry acid")
+    assert value.index("Brominating granules") < value.index("pH down")
     # Joined by separator
     assert " · " in value
 
@@ -98,7 +98,7 @@ def test_recommended_action_sensor_attributes_actions_list():
     assert isinstance(actions, list)
     assert len(actions) == 2
     assert "Brominating granules" in actions[0]
-    assert "Dry acid" in actions[1]
+    assert "pH down" in actions[1]
 
 
 def test_recommended_action_sensor_attributes_empty_when_in_range():
