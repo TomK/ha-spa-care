@@ -159,6 +159,39 @@ class SpaCareCard extends LitElement {
     `;
   }
 
+  _renderRecommendations(recommendedEntity) {
+    if (!recommendedEntity) return html``;
+    const state = this.hass.states[recommendedEntity.entity_id];
+    const actions = state?.attributes?.actions || [];
+    if (!actions.length) return html``;
+    return html`
+      <div class="section-title">Recommended</div>
+      <ul class="actions">
+        ${actions.map((a) => html`<li>${a}</li>`)}
+      </ul>
+    `;
+  }
+
+  _renderPrimaryButton(buttonEntity, recommendedEntity) {
+    if (!buttonEntity) return html``;
+    const recState = this.hass.states[recommendedEntity?.entity_id];
+    const actions = recState?.attributes?.actions || [];
+    const disabled = actions.length === 0;
+    const onClick = () => {
+      this.hass.callService("button", "press", {
+        entity_id: buttonEntity.entity_id,
+      });
+    };
+    return html`
+      <mwc-button
+        class="primary-button"
+        raised
+        ?disabled=${disabled}
+        @click=${onClick}
+      >Log Recommended Doses</mwc-button>
+    `;
+  }
+
   render() {
     if (!this.hass || !this._config) {
       return html`<ha-card><div class="error">Loading…</div></ha-card>`;
@@ -186,6 +219,10 @@ class SpaCareCard extends LitElement {
         ${this._renderReadingRow("pH", entities.ph, entities.phOOR, "")}
         ${this._renderReadingRow("Total Alkalinity", entities.ta, entities.taOOR, "ppm")}
         ${this._renderReadingRow("Hardness", entities.ch, entities.chOOR, "ppm")}
+        ${this._renderRecommendations(entities.recommended)}
+        <div class="button-row">
+          ${this._renderPrimaryButton(entities.logRecommended, entities.recommended)}
+        </div>
       </ha-card>
     `;
   }
