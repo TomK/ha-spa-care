@@ -24,6 +24,27 @@ _PH_DELTA_UNIT = 0.2
 # TA / CH delta-per-dose normalisation: factor is "g per 10 ppm".
 _PPM_DELTA_UNIT_TA_CH = 10.0
 
+# Advice text for out-of-range readings that have no chemical fix (or whose
+# chemical fix has tricky knock-on effects). Emitted as Recommendation with
+# product_key="__advice__"; the card and sensor render the reason text
+# directly; the Log Recommended Doses button skips them (amount=0).
+_ADVICE_FOR: dict[tuple[str, str], str] = {
+    ("tb", "lower"): (
+        "TB is {value} ppm (above target). Stop adding tablets; bromine "
+        "decays over a day or two. Avoid the tub above 8 ppm."
+    ),
+    ("ta", "lower"): (
+        "TA is {value} ppm (above target). pH down lowers TA but also "
+        "drops pH — dose carefully, then aerate (jets on, no cover) for "
+        "an hour to bring pH back up. Or do a partial water change."
+    ),
+    ("ch", "lower"): (
+        "CH is {value} ppm (above target). Calcium hardness can't be "
+        "lowered chemically. Standard fix: partial water change (drain "
+        "25-50%, refill). Spa No Scale helps prevent scale in the meantime."
+    ),
+}
+
 
 def _reading_value(r: Reading, key: str) -> float | None:
     return {
@@ -68,6 +89,14 @@ def evaluate_reading(
         direction = "raise" if state is ReadingState.BELOW else "lower"
         candidates = products_for_reading(key, direction=direction)
         if not candidates:
+            advice_template = _ADVICE_FOR.get((key, direction))
+            if advice_template is not None:
+                dose_recs.append(Recommendation(
+                    product_key="__advice__",
+                    amount=0.0,
+                    reason=advice_template.format(value=value),
+                    priority=_PRIORITY[key],
+                ))
             continue
         product = candidates[0]
         if product.factor is None:
