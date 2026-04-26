@@ -19,7 +19,7 @@ DEFAULT_PRODUCTS: tuple[Product, ...] = (
     ),
     Product(
         key="dry_acid",
-        name="Dry acid (sodium bisulphate)",
+        name="pH down (sodium bisulphate)",
         form=ProductForm.SOLID,
         mode=ProductMode.READING_DRIVEN,
         target_reading="ph",

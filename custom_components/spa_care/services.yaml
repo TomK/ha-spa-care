@@ -53,7 +53,7 @@ log_dose:
           options:
             - label: "Brominating granules (~60% BCDMH)"
               value: brominating_granules
-            - label: "Dry acid (sodium bisulphate)"
+            - label: "pH down (sodium bisulphate)"
               value: dry_acid
             - label: "pH up (sodium carbonate)"
               value: ph_up

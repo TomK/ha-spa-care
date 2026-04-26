@@ -5,7 +5,7 @@ import { LitElement, html, css } from "https://unpkg.com/lit?module";
 // lists physical actions (no amount; logged via spa_care.log_maintenance).
 const PRODUCTS = [
   { value: "brominating_granules", label: "Brominating granules (~60% BCDMH)", unit: "g" },
-  { value: "dry_acid", label: "Dry acid (sodium bisulphate)", unit: "g" },
+  { value: "dry_acid", label: "pH down (sodium bisulphate)", unit: "g" },
   { value: "ph_up", label: "pH up (sodium carbonate)", unit: "g" },
   { value: "ta_up", label: "TA increaser (sodium bicarbonate)", unit: "g" },
   { value: "ch_up", label: "Calcium hardness increaser (calcium chloride)", unit: "g" },
