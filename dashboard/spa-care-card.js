@@ -1,5 +1,21 @@
 import { LitElement, html, css } from "https://unpkg.com/lit?module";
 
+const PRODUCTS = [
+  { value: "brominating_granules", label: "Brominating granules (~60% BCDMH)" },
+  { value: "dry_acid", label: "Dry acid (sodium bisulphate)" },
+  { value: "ph_up", label: "pH up (sodium carbonate)" },
+  { value: "ta_up", label: "TA increaser (sodium bicarbonate)" },
+  { value: "ch_up", label: "Calcium hardness increaser (calcium chloride)" },
+  { value: "spa_no_scale", label: "Spa No Scale (sequestrant)" },
+  { value: "mps_shock", label: "Non-chlorine shock (MPS)" },
+  { value: "filter_cleaner", label: "Filter cartridge cleaner" },
+  { value: "surface_cleaner", label: "Surface cleaner" },
+  { value: "defoamer", label: "Defoamer" },
+  { value: "clarifier", label: "Clarifier" },
+  { value: "sodium_bromide", label: "Sodium bromide reserve" },
+  { value: "bromine_tablets", label: "Bromine tablets (BCDMH 20 g floater)" },
+];
+
 class SpaCareCard extends LitElement {
   static properties = {
     hass: { attribute: false },
@@ -192,6 +208,46 @@ class SpaCareCard extends LitElement {
     `;
   }
 
+  _renderSecondaryButton() {
+    const onClick = () => {
+      this._showCustomDose = !this._showCustomDose;
+    };
+    return html`
+      <mwc-button class="secondary-button" @click=${onClick}>
+        ${this._showCustomDose ? "Cancel" : "+ Log dose"}
+      </mwc-button>
+    `;
+  }
+
+  _renderCustomDoseForm() {
+    if (!this._showCustomDose) return html``;
+    const onSubmit = () => {
+      const product = this.renderRoot.getElementById("dose-product")?.value;
+      const amountRaw = this.renderRoot.getElementById("dose-amount")?.value;
+      const amount = parseFloat(amountRaw);
+      if (!product || Number.isNaN(amount)) return;
+      this.hass.callService("spa_care", "log_dose", { product, amount });
+      this._showCustomDose = false;
+    };
+    return html`
+      <div class="custom-dose-form">
+        <div class="field">
+          <label for="dose-product">Product:</label>
+          <select id="dose-product">
+            ${PRODUCTS.map(
+              (p) => html`<option value=${p.value}>${p.label}</option>`
+            )}
+          </select>
+        </div>
+        <div class="field">
+          <label for="dose-amount">Amount:</label>
+          <input id="dose-amount" type="number" step="any" value="0" />
+        </div>
+        <mwc-button raised @click=${onSubmit}>Add</mwc-button>
+      </div>
+    `;
+  }
+
   render() {
     if (!this.hass || !this._config) {
       return html`<ha-card><div class="error">Loading…</div></ha-card>`;
@@ -222,7 +278,9 @@ class SpaCareCard extends LitElement {
         ${this._renderRecommendations(entities.recommended)}
         <div class="button-row">
           ${this._renderPrimaryButton(entities.logRecommended, entities.recommended)}
+          ${this._renderSecondaryButton()}
         </div>
+        ${this._renderCustomDoseForm()}
       </ha-card>
     `;
   }
