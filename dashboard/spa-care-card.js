@@ -1,19 +1,21 @@
 import { LitElement, html, css } from "https://unpkg.com/lit?module";
 
+// Mirrors domain/products.py — keep in sync. unit reflects the product's
+// form (g for solids, ml for liquids) and drives the form's unit label.
 const PRODUCTS = [
-  { value: "brominating_granules", label: "Brominating granules (~60% BCDMH)" },
-  { value: "dry_acid", label: "Dry acid (sodium bisulphate)" },
-  { value: "ph_up", label: "pH up (sodium carbonate)" },
-  { value: "ta_up", label: "TA increaser (sodium bicarbonate)" },
-  { value: "ch_up", label: "Calcium hardness increaser (calcium chloride)" },
-  { value: "spa_no_scale", label: "Spa No Scale (sequestrant)" },
-  { value: "mps_shock", label: "Non-chlorine shock (MPS)" },
-  { value: "filter_cleaner", label: "Filter cartridge cleaner" },
-  { value: "surface_cleaner", label: "Surface cleaner" },
-  { value: "defoamer", label: "Defoamer" },
-  { value: "clarifier", label: "Clarifier" },
-  { value: "sodium_bromide", label: "Sodium bromide reserve" },
-  { value: "bromine_tablets", label: "Bromine tablets (BCDMH 20 g floater)" },
+  { value: "brominating_granules", label: "Brominating granules (~60% BCDMH)", unit: "g" },
+  { value: "dry_acid", label: "Dry acid (sodium bisulphate)", unit: "g" },
+  { value: "ph_up", label: "pH up (sodium carbonate)", unit: "g" },
+  { value: "ta_up", label: "TA increaser (sodium bicarbonate)", unit: "g" },
+  { value: "ch_up", label: "Calcium hardness increaser (calcium chloride)", unit: "g" },
+  { value: "spa_no_scale", label: "Spa No Scale (sequestrant)", unit: "ml" },
+  { value: "mps_shock", label: "Non-chlorine shock (MPS)", unit: "g" },
+  { value: "filter_cleaner", label: "Filter cartridge cleaner", unit: "ml" },
+  { value: "surface_cleaner", label: "Surface cleaner", unit: "ml" },
+  { value: "defoamer", label: "Defoamer", unit: "ml" },
+  { value: "clarifier", label: "Clarifier", unit: "ml" },
+  { value: "sodium_bromide", label: "Sodium bromide reserve", unit: "g" },
+  { value: "bromine_tablets", label: "Bromine tablets (BCDMH 20 g floater)", unit: "g" },
 ];
 
 class SpaCareCard extends LitElement {
@@ -21,6 +23,7 @@ class SpaCareCard extends LitElement {
     hass: { attribute: false },
     _config: { state: true },
     _showCustomDose: { state: true },
+    _doseProduct: { state: true },
   };
 
   static styles = css`
@@ -232,6 +235,12 @@ class SpaCareCard extends LitElement {
 
   _renderCustomDoseForm() {
     if (!this._showCustomDose) return html``;
+    const selectedKey = this._doseProduct || PRODUCTS[0].value;
+    const selectedProduct = PRODUCTS.find((p) => p.value === selectedKey);
+    const unit = selectedProduct?.unit ?? "";
+    const onProductChange = (ev) => {
+      this._doseProduct = ev.target.value;
+    };
     const onSubmit = () => {
       const product = this.renderRoot.getElementById("dose-product")?.value;
       const amountRaw = this.renderRoot.getElementById("dose-amount")?.value;
@@ -239,20 +248,22 @@ class SpaCareCard extends LitElement {
       if (!product || Number.isNaN(amount)) return;
       this.hass.callService("spa_care", "log_dose", { product, amount });
       this._showCustomDose = false;
+      this._doseProduct = null;
     };
     return html`
       <div class="custom-dose-form">
         <div class="field">
           <label for="dose-product">Product:</label>
-          <select id="dose-product">
+          <select id="dose-product" @change=${onProductChange}>
             ${PRODUCTS.map(
-              (p) => html`<option value=${p.value}>${p.label}</option>`
+              (p) => html`<option value=${p.value} ?selected=${p.value === selectedKey}>${p.label}</option>`
             )}
           </select>
         </div>
         <div class="field">
           <label for="dose-amount">Amount:</label>
           <input id="dose-amount" type="number" step="any" value="0" />
+          <span>${unit}</span>
         </div>
         <mwc-button raised @click=${onSubmit}>Add</mwc-button>
       </div>
