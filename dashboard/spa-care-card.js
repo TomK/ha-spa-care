@@ -123,6 +123,42 @@ class SpaCareCard extends LitElement {
     return "⚠️ Test due";
   }
 
+  _renderReadingRow(label, numEntity, oorEntity, unit) {
+    if (!numEntity) return html``;
+    const numState = this.hass.states[numEntity.entity_id];
+    const oorState = oorEntity ? this.hass.states[oorEntity.entity_id] : null;
+    const value = numState?.state;
+    const isUnknown = value === undefined || value === "unknown" || value === null;
+    let badge = html``;
+    if (!isUnknown && oorState) {
+      badge = oorState.state === "on"
+        ? html`<span class="badge" title="Out of range">⚠️</span>`
+        : html`<span class="badge" title="In range">✓</span>`;
+    }
+    const onChange = (ev) => {
+      const newValue = parseFloat(ev.target.value);
+      if (Number.isNaN(newValue)) return;
+      this.hass.callService("number", "set_value", {
+        entity_id: numEntity.entity_id,
+        value: newValue,
+      });
+    };
+    return html`
+      <div class="row">
+        <div class="label">${label}</div>
+        <input
+          class="input"
+          type="number"
+          step=${numState?.attributes?.step ?? "any"}
+          .value=${isUnknown ? "" : value}
+          @change=${onChange}
+        />
+        ${unit ? html`<span>${unit}</span>` : ""}
+        ${badge}
+      </div>
+    `;
+  }
+
   render() {
     if (!this.hass || !this._config) {
       return html`<ha-card><div class="error">Loading…</div></ha-card>`;
@@ -146,6 +182,10 @@ class SpaCareCard extends LitElement {
       <ha-card>
         <div class="header">${title}</div>
         <div class="status">${this._statusText(testDueState)}</div>
+        ${this._renderReadingRow("Total Bromine", entities.tb, entities.tbOOR, "ppm")}
+        ${this._renderReadingRow("pH", entities.ph, entities.phOOR, "")}
+        ${this._renderReadingRow("Total Alkalinity", entities.ta, entities.taOOR, "ppm")}
+        ${this._renderReadingRow("Hardness", entities.ch, entities.chOOR, "ppm")}
       </ha-card>
     `;
   }
