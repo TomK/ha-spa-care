@@ -32,6 +32,7 @@ async def async_setup_entry(
         LastTestAgeSensor(coord, entry_id=entry.entry_id),
         RecommendedActionSensor(coord, entry_id=entry.entry_id),
         NextRetestAtSensor(coord, entry_id=entry.entry_id),
+        TubVolumeSensor(coord, entry_id=entry.entry_id),
     ])
 
 
@@ -78,6 +79,19 @@ class RecommendedActionSensor(SpaCareEntity, SensorEntity):
         if recs and recs[0].product_key == "__recheck__":
             return {"actions": [r.reason for r in recs]}
         return {"actions": [_format_action(r) for r in recs]}
+
+
+class TubVolumeSensor(SpaCareEntity, SensorEntity):
+    _attr_name = "Tub Volume"
+    _attr_native_unit_of_measurement = "L"
+    _attr_entity_category = "diagnostic"
+
+    def __init__(self, coordinator, *, entry_id):
+        super().__init__(coordinator, entry_id=entry_id, suffix="volume")
+
+    @property
+    def native_value(self) -> float:
+        return self.coordinator.volume_l
 
 
 def _format_action(rec) -> str:

@@ -1,15 +1,17 @@
 import { LitElement, html, css } from "https://unpkg.com/lit?module";
 
 // Mirrors domain/products.py — keep in sync. unit reflects the product's
-// form (g for solids, ml for liquids) and drives the form's unit label.
+// form (g for solids, ml for liquids). typicalPer1000L is set for
+// schedule-driven products that have a recommended cadence dose; the card
+// multiplies it by the tub volume to suggest an amount in the form.
 const PRODUCTS = [
   { value: "brominating_granules", label: "Brominating granules (~60% BCDMH)", unit: "g" },
   { value: "dry_acid", label: "Dry acid (sodium bisulphate)", unit: "g" },
   { value: "ph_up", label: "pH up (sodium carbonate)", unit: "g" },
   { value: "ta_up", label: "TA increaser (sodium bicarbonate)", unit: "g" },
   { value: "ch_up", label: "Calcium hardness increaser (calcium chloride)", unit: "g" },
-  { value: "spa_no_scale", label: "Spa No Scale (sequestrant)", unit: "ml" },
-  { value: "mps_shock", label: "Non-chlorine shock (MPS)", unit: "g" },
+  { value: "spa_no_scale", label: "Spa No Scale (sequestrant)", unit: "ml", typicalPer1000L: 40 },
+  { value: "mps_shock", label: "Non-chlorine shock (MPS)", unit: "g", typicalPer1000L: 10 },
   { value: "filter_cleaner", label: "Filter cartridge cleaner", unit: "ml" },
   { value: "surface_cleaner", label: "Surface cleaner", unit: "ml" },
   { value: "defoamer", label: "Defoamer", unit: "ml" },
@@ -132,6 +134,7 @@ class SpaCareCard extends LitElement {
       recommended: byKey("_recommended_action"),
       nextRetest: byKey("_next_retest_at"),
       logRecommended: byKey("_log_recommended_doses"),
+      volume: byKey("_volume"),
     };
   }
 
@@ -233,11 +236,20 @@ class SpaCareCard extends LitElement {
     `;
   }
 
-  _renderCustomDoseForm() {
+  _renderCustomDoseForm(volumeEntity) {
     if (!this._showCustomDose) return html``;
     const selectedKey = this._doseProduct || PRODUCTS[0].value;
     const selectedProduct = PRODUCTS.find((p) => p.value === selectedKey);
     const unit = selectedProduct?.unit ?? "";
+
+    const volumeState = volumeEntity ? this.hass.states[volumeEntity.entity_id] : null;
+    const volumeL = volumeState ? parseFloat(volumeState.state) : NaN;
+    const typical = selectedProduct?.typicalPer1000L;
+    const suggestion =
+      typical && !Number.isNaN(volumeL)
+        ? Math.round(typical * (volumeL / 1000))
+        : null;
+
     const onProductChange = (ev) => {
       this._doseProduct = ev.target.value;
     };
@@ -262,8 +274,14 @@ class SpaCareCard extends LitElement {
         </div>
         <div class="field">
           <label for="dose-amount">Amount:</label>
-          <input id="dose-amount" type="number" step="any" value="0" />
-          <span>${unit}</span>
+          <input
+            id="dose-amount"
+            type="number"
+            step="any"
+            placeholder=${suggestion ?? ""}
+            .value=${suggestion != null ? String(suggestion) : ""}
+          />
+          <span>${unit}${suggestion != null ? html` <em style="color:var(--secondary-text-color)">(typical for this tub)</em>` : ""}</span>
         </div>
         <mwc-button raised @click=${onSubmit}>Add</mwc-button>
       </div>
@@ -321,7 +339,7 @@ class SpaCareCard extends LitElement {
           ${this._renderPrimaryButton(entities.logRecommended, entities.recommended)}
           ${this._renderSecondaryButton()}
         </div>
-        ${this._renderCustomDoseForm()}
+        ${this._renderCustomDoseForm(entities.volume)}
         ${this._renderRetest(entities.nextRetest)}
       </ha-card>
     `;

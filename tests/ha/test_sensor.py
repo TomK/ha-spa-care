@@ -7,6 +7,7 @@ from custom_components.spa_care.sensor import (
     LastTestAgeSensor,
     NextRetestAtSensor,
     RecommendedActionSensor,
+    TubVolumeSensor,
 )
 
 
@@ -17,6 +18,13 @@ def _coord(reading: Reading | None = None, *, doses: list[Dose] | None = None):
     coord.targets = DEFAULT_TARGETS
     coord.volume_l = 1500.0
     return coord
+
+
+def test_tub_volume_sensor_reports_volume_l():
+    coord = _coord()
+    s = TubVolumeSensor(coord, entry_id="x")
+    assert s.native_value == 1500.0
+    assert s.native_unit_of_measurement == "L"
 
 
 def test_last_test_age_sensor_reports_minutes():
