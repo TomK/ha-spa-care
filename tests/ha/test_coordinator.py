@@ -69,3 +69,31 @@ async def test_suppression_persists_after_nudge_fired(coordinator):
         call.args[1].get("subject") != "tb"
         for call in coordinator.hass.bus.async_fire.call_args_list
     )
+
+
+async def test_log_reading_merges_partial_with_existing(coordinator):
+    await coordinator.async_initialize()
+    await coordinator.async_log_reading(
+        Reading(timestamp=NOW, total_bromine=4.0, ph=7.4,
+                total_alkalinity=100, calcium_hardness=180),
+    )
+    # Partial update — only TB
+    await coordinator.async_log_reading(
+        Reading(timestamp=NOW + timedelta(minutes=5), total_bromine=4.5),
+    )
+    last = coordinator.last_reading
+    assert last.total_bromine == 4.5
+    assert last.ph == 7.4
+    assert last.total_alkalinity == 100
+    assert last.calcium_hardness == 180
+    assert last.timestamp == NOW + timedelta(minutes=5)
+
+
+async def test_log_reading_first_partial_stored_as_is(coordinator):
+    await coordinator.async_initialize()
+    await coordinator.async_log_reading(
+        Reading(timestamp=NOW, total_bromine=4.5),
+    )
+    last = coordinator.last_reading
+    assert last.total_bromine == 4.5
+    assert last.ph is None

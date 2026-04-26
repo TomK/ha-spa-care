@@ -69,10 +69,27 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
         }
 
     async def async_log_reading(self, reading: Reading) -> None:
-        self.last_reading = reading
+        self.last_reading = self._merge_reading(reading)
         self._dispatch(trigger="log_reading", now=_utcnow())
         await self._persist()  # after dispatch — captures suppressions added during dispatch
         self.async_update_listeners()
+
+    def _merge_reading(self, incoming: Reading) -> Reading:
+        """Merge non-None fields from incoming over last_reading.
+
+        A partial reading (e.g. only TB updated via the device card) preserves
+        previously logged values for the other fields. The timestamp is always
+        taken from the incoming reading.
+        """
+        if self.last_reading is None:
+            return incoming
+        from dataclasses import replace
+        updates = {
+            f: getattr(incoming, f)
+            for f in ("total_bromine", "ph", "total_alkalinity", "calcium_hardness")
+            if getattr(incoming, f) is not None
+        }
+        return replace(self.last_reading, timestamp=incoming.timestamp, **updates)
 
     async def async_log_dose(
         self,
