@@ -67,11 +67,43 @@ class SpaCareCard extends LitElement {
       margin-top: 12px;
       align-items: center;
     }
-    .primary-button {
+    button.btn {
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+    button.btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    button.btn-primary {
+      background: var(--primary-color);
+      color: var(--text-primary-color, white);
+      border: none;
       flex: 1;
     }
-    .secondary-button {
-      flex: 0 0 auto;
+    button.btn-primary:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+    button.btn-text {
+      background: transparent;
+      color: var(--primary-color);
+      border: none;
+    }
+    button.btn-text:hover:not(:disabled) {
+      background: rgba(var(--rgb-primary-color, 33, 150, 243), 0.08);
+    }
+    button.btn-outlined {
+      background: transparent;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+    }
+    button.btn-outlined:hover:not(:disabled) {
+      background: rgba(var(--rgb-primary-color, 33, 150, 243), 0.08);
     }
     .custom-dose-form {
       margin-top: 12px;
@@ -224,12 +256,11 @@ class SpaCareCard extends LitElement {
       });
     };
     return html`
-      <mwc-button
-        class="primary-button"
-        raised
+      <button
+        class="btn btn-primary"
         ?disabled=${disabled}
         @click=${onClick}
-      >Log Recommended Doses</mwc-button>
+      >Log Recommended Doses</button>
     `;
   }
 
@@ -238,9 +269,9 @@ class SpaCareCard extends LitElement {
       this._showCustomDose = !this._showCustomDose;
     };
     return html`
-      <mwc-button class="secondary-button" @click=${onClick}>
+      <button class="btn btn-text" @click=${onClick}>
         ${this._showCustomDose ? "Cancel" : "+ Log dose"}
-      </mwc-button>
+      </button>
     `;
   }
 
@@ -291,7 +322,7 @@ class SpaCareCard extends LitElement {
           />
           <span>${unit}${suggestion != null ? html` <em style="color:var(--secondary-text-color)">(typical for this tub)</em>` : ""}</span>
         </div>
-        <mwc-button raised @click=${onSubmit}>Add</mwc-button>
+        <button class="btn btn-primary" @click=${onSubmit}>Add</button>
       </div>
     `;
   }
@@ -305,9 +336,9 @@ class SpaCareCard extends LitElement {
       <div class="maintenance-row">
         ${MAINTENANCE_PRODUCTS.map(
           (m) => html`
-            <mwc-button outlined @click=${() => onClick(m.value)}>
+            <button class="btn btn-outlined" @click=${() => onClick(m.value)}>
               ${m.label}
-            </mwc-button>
+            </button>
           `
         )}
       </div>
