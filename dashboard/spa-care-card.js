@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "https://unpkg.com/lit?module";
+import { LitElement, html, css, nothing } from "https://unpkg.com/lit?module";
 
 // Mirrors domain/products.py — keep in sync. PRODUCTS lists chemicals
 // you put INTO the water (dosed, with an amount). MAINTENANCE_PRODUCTS
@@ -202,6 +202,9 @@ class SpaCareCard extends LitElement {
     const oorState = oorEntity ? this.hass.states[oorEntity.entity_id] : null;
     const value = numState?.state;
     const isUnknown = value === undefined || value === "unknown" || value === null;
+    const min = numState?.attributes?.min;
+    const max = numState?.attributes?.max;
+    const step = numState?.attributes?.step ?? "any";
     let badge = html``;
     if (!isUnknown && oorState) {
       badge = oorState.state === "on"
@@ -209,8 +212,17 @@ class SpaCareCard extends LitElement {
         : html`<span class="badge" title="In range">✓</span>`;
     }
     const onChange = (ev) => {
-      const newValue = parseFloat(ev.target.value);
-      if (Number.isNaN(newValue)) return;
+      let newValue = parseFloat(ev.target.value);
+      if (Number.isNaN(newValue)) {
+        // Bad input — snap back to last known value.
+        ev.target.value = isUnknown ? "" : value;
+        return;
+      }
+      if (typeof min === "number" && newValue < min) newValue = min;
+      if (typeof max === "number" && newValue > max) newValue = max;
+      // Reflect the clamped value so the UI doesn't pretend an out-of-range
+      // entry was accepted.
+      ev.target.value = String(newValue);
       this.hass.callService("number", "set_value", {
         entity_id: numEntity.entity_id,
         value: newValue,
@@ -222,7 +234,9 @@ class SpaCareCard extends LitElement {
         <input
           class="input"
           type="number"
-          step=${numState?.attributes?.step ?? "any"}
+          step=${step}
+          min=${min ?? nothing}
+          max=${max ?? nothing}
           .value=${isUnknown ? "" : value}
           @change=${onChange}
         />
