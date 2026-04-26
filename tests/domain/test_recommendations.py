@@ -102,3 +102,17 @@ def test_advice_mixes_with_dose_recommendations():
     assert len(recs) == 2
     assert recs[0].product_key == "brominating_granules"  # TB priority 1
     assert recs[1].product_key == "__advice__"            # CH priority 4
+
+
+def test_recheck_does_not_suppress_other_readings():
+    # TB at hard_max=20 (high — advice) + pH > hard_max=8.4 (recheck).
+    # Both should be returned; advice should not be hidden by the recheck.
+    r = _r(total_bromine=20.0, ph=9.0, total_alkalinity=100, calcium_hardness=180)
+    recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
+    assert len(recs) == 2
+    keys = [rec.product_key for rec in recs]
+    assert "__advice__" in keys  # TB high → advice
+    assert "__recheck__" in keys  # pH out-of-band → recheck
+    # TB priority 1 → first; pH priority 2 → second
+    assert recs[0].product_key == "__advice__"
+    assert recs[1].product_key == "__recheck__"

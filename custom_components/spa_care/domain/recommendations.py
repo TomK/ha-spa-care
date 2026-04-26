@@ -118,6 +118,7 @@ def evaluate_reading(
             priority=_PRIORITY[key],
         ))
 
-    if out_of_band:
-        return sorted(out_of_band, key=lambda r: r.priority)
-    return sorted(dose_recs, key=lambda r: r.priority)
+    # Mix recheck with normal dose/advice recs so a strip error on one
+    # reading doesn't suppress what we know about the others. Sorted by
+    # priority — TB-advice (priority 1) appears before pH-recheck (2).
+    return sorted(out_of_band + dose_recs, key=lambda r: r.priority)
