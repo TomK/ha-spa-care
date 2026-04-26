@@ -94,18 +94,21 @@ DEFAULT_PRODUCTS: tuple[Product, ...] = (
         name="Defoamer",
         form=ProductForm.LIQUID,
         mode=ProductMode.MANUAL,
+        typical_dose_per_1000L=10.0,  # ml; reactive dose when foam appears
     ),
     Product(
         key="clarifier",
         name="Clarifier",
         form=ProductForm.LIQUID,
         mode=ProductMode.MANUAL,
+        typical_dose_per_1000L=30.0,  # ml; reactive dose for hazy water
     ),
     Product(
         key="sodium_bromide",
         name="Sodium bromide reserve",
         form=ProductForm.SOLID,
         mode=ProductMode.MANUAL,
+        typical_dose_per_1000L=30.0,  # g; at refill or after heavy shock
     ),
     Product(
         key="bromine_tablets",

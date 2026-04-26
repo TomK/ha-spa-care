@@ -11,9 +11,9 @@ const PRODUCTS = [
   { value: "ch_up", label: "Calcium hardness increaser (calcium chloride)", unit: "g" },
   { value: "spa_no_scale", label: "Spa No Scale (sequestrant)", unit: "ml", typicalPer1000L: 40 },
   { value: "mps_shock", label: "Non-chlorine shock (MPS)", unit: "g", typicalPer1000L: 10 },
-  { value: "defoamer", label: "Defoamer", unit: "ml" },
-  { value: "clarifier", label: "Clarifier", unit: "ml" },
-  { value: "sodium_bromide", label: "Sodium bromide reserve", unit: "g" },
+  { value: "defoamer", label: "Defoamer", unit: "ml", typicalPer1000L: 10 },
+  { value: "clarifier", label: "Clarifier", unit: "ml", typicalPer1000L: 30 },
+  { value: "sodium_bromide", label: "Sodium bromide reserve", unit: "g", typicalPer1000L: 30 },
   { value: "bromine_tablets", label: "Bromine tablets (BCDMH 20 g floater)", unit: "g" },
 ];
 
