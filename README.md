@@ -25,17 +25,18 @@ its own set of entities prefixed by the spa name.
 
 Once configured, the **Spa Care** device exposes:
 
-- **Four editable readings**: Total Bromine, pH, Total Alkalinity, Calcium
-  Hardness. Tap a value, type the new reading from your strip, save. The
-  integration logs a partial reading and merges it with the previously
-  known values, so you can update one at a time without losing the rest.
-- **`Recommended Action`** sensor: shows everything you need to add right
-  now, joined as a single line on the device card and exposed as a clean
-  list of strings in the `actions` state attribute. Ordered TB → pH → TA →
-  CH (sanitation first, comfort second, slow problems last).
+- **Four editable readings**: Total Bromine, pH, Total Alkalinity, Hardness.
+  Tap a value, type the new reading from your strip, save. The integration
+  logs a partial reading and merges it with the previously known values,
+  so you can update one at a time without losing the rest.
+- **`Recommended Action`** sensor: shows everything you need to do right
+  now (chemical doses *and* advisories like "high CH — do a partial water
+  change"), joined as a single line on the device card and exposed as a
+  clean list of strings in the `actions` state attribute. Ordered TB →
+  pH → TA → CH (sanitation first, comfort second, slow problems last).
 - **`Log Recommended Doses`** button: one-tap shortcut that iterates the
-  full action list and logs each item as a `Dose`, kicking off the post-dose
-  retest cycle. No-op when there's nothing to dose.
+  recommendations and logs each chemical dose, kicking off the post-dose
+  retest cycle. Skips advisory recs (no chemical to log).
 - **`Test Due`** binary sensor: on whenever you should go test the spa,
   for either of two reasons exposed in the `reasons` state attribute:
   - `routine` — no reading in 5 days
@@ -45,6 +46,23 @@ Once configured, the **Spa Care** device exposes:
   predicted to fire (HA renders this as relative time, e.g. "in 1 h 23 m").
 - **Per-reading `*_out_of_range` binary sensors** (TB, pH, TA, CH).
 - **`Last Test Age`** sensor: minutes since your last reading.
+- **`Tub Volume`** diagnostic sensor: the configured volume in litres,
+  used by the card to suggest typical doses.
+
+## Doses vs maintenance actions
+
+Two service entry points record what you've done:
+
+- **`spa_care.log_dose(product, amount)`** — chemical doses you put into
+  the water (granules, pH up/down, MPS shock, sodium bromide reserve,
+  etc.). Has an amount in g or ml depending on the product.
+- **`spa_care.log_maintenance(product)`** — physical actions you do to
+  the spa rather than the water: `filter_cleaner` (cartridge soaked) and
+  `surface_cleaner` (waterline wiped). No amount; just records that the
+  action happened, which clears the matching scheduled-due nudge.
+
+The `log_reading` service rounds out the trio for entering test-strip
+readings programmatically.
 
 ## Custom Lovelace card (optional)
 
@@ -66,7 +84,7 @@ ships in [`dashboard/`](dashboard/). It pulls all entities from a
 If you'd rather log doses precisely (e.g. you added 45 g instead of the
 recommended 50 g), call the `spa_care.log_dose` service directly from
 Developer Tools → Actions, where the product field is a dropdown of the
-13 supported products.
+supported chemicals.
 
 ## Why are recommended doses lower than the textbook calculation?
 
