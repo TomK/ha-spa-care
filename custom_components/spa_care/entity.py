@@ -16,6 +16,6 @@ class SpaCareEntity(CoordinatorEntity[SpaCareCoordinator]):
         self._attr_unique_id = f"{entry_id}_{suffix}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry_id)},
-            "name": "Spa Care",
+            "name": coordinator.spa_name,
             "manufacturer": "spa_care",
         }

@@ -28,6 +28,7 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
         self,
         hass: HomeAssistant,
         entry_id: str,
+        name: str,
         volume_l: float,
         targets: dict[str, TargetRange] | None,
         store: Store | None = None,
@@ -35,6 +36,7 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
         super().__init__(hass, logger=_LOGGER, name=DOMAIN)
         self.hass = hass
         self._entry_id = entry_id
+        self.spa_name = name
         self.volume_l = volume_l
         self.targets = targets or DEFAULT_TARGETS
         self._store = store or Store(hass, STORAGE_VERSION, f"{STORAGE_KEY}_{entry_id}")

@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_time_interval
 
-from .const import CONF_VOLUME_L, DOMAIN, HOURLY_TICK_SECONDS, PLATFORMS
+from .const import CONF_NAME, CONF_VOLUME_L, DOMAIN, HOURLY_TICK_SECONDS, PLATFORMS
 from .coordinator import SpaCareCoordinator
 from .services import async_register_services
 
@@ -17,6 +17,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coord = SpaCareCoordinator(
         hass=hass,
         entry_id=entry.entry_id,
+        name=entry.data.get(CONF_NAME, "Spa"),
         volume_l=entry.data[CONF_VOLUME_L],
         targets=None,
     )

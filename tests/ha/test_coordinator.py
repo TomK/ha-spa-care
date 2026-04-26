@@ -22,11 +22,16 @@ def coordinator():
     coord = SpaCareCoordinator(
         hass=hass,
         entry_id="abc",
+        name="Spa",
         volume_l=1500.0,
         targets=None,
         store=store,
     )
     return coord
+
+
+async def test_coordinator_exposes_spa_name(coordinator):
+    assert coordinator.spa_name == "Spa"
 
 
 async def test_log_reading_persists_and_runs_rules(coordinator):
