@@ -68,3 +68,37 @@ def test_partial_data_only_evaluates_reported_readings():
     recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
     assert len(recs) == 1
     assert recs[0].product_key == "brominating_granules"
+
+
+def test_high_ta_returns_advice_recommendation():
+    r = _r(total_bromine=4.0, ph=7.4, total_alkalinity=180, calcium_hardness=180)
+    recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
+    advice = [rec for rec in recs if rec.product_key == "__advice__"]
+    assert len(advice) == 1
+    assert "TA" in advice[0].reason
+    assert "ph down" in advice[0].reason.lower() or "aerate" in advice[0].reason.lower()
+
+
+def test_high_ch_returns_advice_recommendation():
+    r = _r(total_bromine=4.0, ph=7.4, total_alkalinity=100, calcium_hardness=320)
+    recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
+    advice = [rec for rec in recs if rec.product_key == "__advice__"]
+    assert len(advice) == 1
+    assert "partial water change" in advice[0].reason.lower()
+
+
+def test_high_tb_returns_advice_recommendation():
+    r = _r(total_bromine=8.0, ph=7.4, total_alkalinity=100, calcium_hardness=180)
+    recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
+    advice = [rec for rec in recs if rec.product_key == "__advice__"]
+    assert len(advice) == 1
+    assert "decay" in advice[0].reason.lower() or "tablets" in advice[0].reason.lower()
+
+
+def test_advice_mixes_with_dose_recommendations():
+    # TB low (dose) + CH high (advice) — both appear, in priority order
+    r = _r(total_bromine=2.0, ph=7.4, total_alkalinity=100, calcium_hardness=320)
+    recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
+    assert len(recs) == 2
+    assert recs[0].product_key == "brominating_granules"  # TB priority 1
+    assert recs[1].product_key == "__advice__"            # CH priority 4

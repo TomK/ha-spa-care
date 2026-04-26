@@ -67,8 +67,6 @@ class RecommendedActionSensor(SpaCareEntity, SensorEntity):
         recs = evaluate_reading(last, self.coordinator.targets, self.coordinator.volume_l)
         if not recs:
             return "None — looking good"
-        if recs[0].product_key == "__recheck__":
-            return " · ".join(r.reason for r in recs)
         return " · ".join(_format_action(r) for r in recs)
 
     @property
@@ -77,8 +75,6 @@ class RecommendedActionSensor(SpaCareEntity, SensorEntity):
         if last is None:
             return {"actions": []}
         recs = evaluate_reading(last, self.coordinator.targets, self.coordinator.volume_l)
-        if recs and recs[0].product_key == "__recheck__":
-            return {"actions": [r.reason for r in recs]}
         return {"actions": [_format_action(r) for r in recs]}
 
 
@@ -96,6 +92,8 @@ class TubVolumeSensor(SpaCareEntity, SensorEntity):
 
 
 def _format_action(rec) -> str:
+    if rec.product_key in ("__recheck__", "__advice__"):
+        return rec.reason
     try:
         product = get_product(rec.product_key)
         unit = "ml" if product.form is ProductForm.LIQUID else "g"

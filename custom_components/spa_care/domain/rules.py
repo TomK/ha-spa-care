@@ -96,6 +96,8 @@ def _reading_recommendation(state: RuleState, now: datetime, trigger: str) -> li
 def _subject_for_recommendation(product_key: str) -> str | None:
     if product_key == "__recheck__":
         return "recheck"
+    if product_key == "__advice__":
+        return "advice"
     try:
         product = get_product(product_key)
     except KeyError:
