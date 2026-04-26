@@ -1,4 +1,4 @@
-"""Binary sensor platform: test_overdue, *_out_of_range, retest_due."""
+"""Binary sensor platform: test_due, *_out_of_range."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ async def async_setup_entry(
 ) -> None:
     coord: SpaCareCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities([
-        TestOverdueBinarySensor(coord, entry_id=entry.entry_id),
+        TestDueBinarySensor(coord, entry_id=entry.entry_id),
         OutOfRangeBinarySensor(coord, entry_id=entry.entry_id, reading_key="tb",
                                name="TB Out of Range"),
         OutOfRangeBinarySensor(coord, entry_id=entry.entry_id, reading_key="ph",
@@ -45,19 +45,45 @@ async def async_setup_entry(
                                name="TA Out of Range"),
         OutOfRangeBinarySensor(coord, entry_id=entry.entry_id, reading_key="ch",
                                name="CH Out of Range"),
-        PostDoseRetestBinarySensor(coord, entry_id=entry.entry_id),
     ])
 
 
-class TestOverdueBinarySensor(SpaCareEntity, BinarySensorEntity):
+class TestDueBinarySensor(SpaCareEntity, BinarySensorEntity):
     __test__ = False  # not a pytest test class
-    _attr_name = "Test Overdue"
+    _attr_name = "Test Due"
 
     def __init__(self, coordinator, *, entry_id):
-        super().__init__(coordinator, entry_id=entry_id, suffix="test_overdue")
+        super().__init__(coordinator, entry_id=entry_id, suffix="test_due")
 
     @property
     def is_on(self) -> bool:
+        return bool(self._reasons())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, list[str]]:
+        return {"reasons": self._reasons()}
+
+    def _reasons(self) -> list[str]:
+        reasons: list[str] = []
+        if self._post_dose_retest_pending():
+            reasons.append("post_dose")
+        if self._routine_overdue():
+            reasons.append("routine")
+        return reasons
+
+    def _post_dose_retest_pending(self) -> bool:
+        last_dose = last_reading_driven_dose(tuple(self.coordinator.doses))
+        if last_dose is None:
+            return False
+        if (
+            self.coordinator.last_reading is not None
+            and self.coordinator.last_reading.timestamp > last_dose.timestamp
+        ):
+            return False
+        age = datetime.now(timezone.utc) - last_dose.timestamp
+        return RETEST_DELAY <= age <= RETEST_WINDOW
+
+    def _routine_overdue(self) -> bool:
         last = self.coordinator.last_reading
         if last is None:
             return True
@@ -81,23 +107,3 @@ class OutOfRangeBinarySensor(SpaCareEntity, BinarySensorEntity):
             return False
         target = self.coordinator.targets[self._reading_key]
         return classify_reading(value, target) is not ReadingState.IN_RANGE
-
-
-class PostDoseRetestBinarySensor(SpaCareEntity, BinarySensorEntity):
-    _attr_name = "Retest Due"
-
-    def __init__(self, coordinator, *, entry_id):
-        super().__init__(coordinator, entry_id=entry_id, suffix="retest_due")
-
-    @property
-    def is_on(self) -> bool:
-        last_dose = last_reading_driven_dose(tuple(self.coordinator.doses))
-        if last_dose is None:
-            return False
-        if (
-            self.coordinator.last_reading is not None
-            and self.coordinator.last_reading.timestamp > last_dose.timestamp
-        ):
-            return False
-        age = datetime.now(timezone.utc) - last_dose.timestamp
-        return RETEST_DELAY <= age <= RETEST_WINDOW
