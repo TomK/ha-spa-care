@@ -84,14 +84,68 @@ class SpaCareCard extends LitElement {
     return 6;
   }
 
+  _resolveEntities() {
+    const all = Object.values(this.hass.entities || {});
+    const mine = all.filter((e) => e.device_id === this._config.device_id);
+    const byKey = (suffix) =>
+      mine.find((e) => (e.unique_id || "").endsWith(suffix));
+    return {
+      tb: byKey("_total_bromine"),
+      ph: byKey("_ph"),
+      ta: byKey("_total_alkalinity"),
+      ch: byKey("_calcium_hardness"),
+      tbOOR: byKey("_tb_out_of_range"),
+      phOOR: byKey("_ph_out_of_range"),
+      taOOR: byKey("_ta_out_of_range"),
+      chOOR: byKey("_ch_out_of_range"),
+      testDue: byKey("_test_due"),
+      recommended: byKey("_recommended_action"),
+      nextRetest: byKey("_next_retest_at"),
+      logRecommended: byKey("_log_recommended_doses"),
+    };
+  }
+
+  _device() {
+    if (!this._config?.device_id) return null;
+    return this.hass.devices?.[this._config.device_id] ?? null;
+  }
+
+  _statusText(testDueState) {
+    if (!testDueState) return "";
+    const reasons = testDueState.attributes?.reasons || [];
+    if (testDueState.state !== "on") return "✅ All good";
+    const set = new Set(reasons);
+    if (set.has("post_dose") && set.has("routine")) {
+      return "🔔 Retest pending — also overdue";
+    }
+    if (set.has("post_dose")) return "⏱ Retest pending";
+    if (set.has("routine")) return "🔔 Test overdue (no reading in 5+ days)";
+    return "⚠️ Test due";
+  }
+
   render() {
     if (!this.hass || !this._config) {
       return html`<ha-card><div class="error">Loading…</div></ha-card>`;
     }
+    const device = this._device();
+    if (!device) {
+      return html`<ha-card><div class="error">
+        Configure a device — open the card config and pick your Spa Care device.
+      </div></ha-card>`;
+    }
+    const entities = this._resolveEntities();
+    if (!entities.tb || !entities.recommended || !entities.logRecommended) {
+      return html`<ha-card><div class="error">
+        Spa Care card is incompatible with this integration version
+        (missing expected entities).
+      </div></ha-card>`;
+    }
+    const title = device.name_by_user || device.name || "Spa Care";
+    const testDueState = this.hass.states[entities.testDue?.entity_id];
     return html`
       <ha-card>
-        <div class="header">Spa Care</div>
-        <div class="status">device_id: ${this._config.device_id}</div>
+        <div class="header">${title}</div>
+        <div class="status">${this._statusText(testDueState)}</div>
       </ha-card>
     `;
   }
