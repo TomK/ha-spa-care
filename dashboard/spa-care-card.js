@@ -100,6 +100,14 @@ class SpaCareCard extends LitElement {
     return 6;
   }
 
+  static getConfigElement() {
+    return document.createElement("spa-care-card-editor");
+  }
+
+  static getStubConfig() {
+    return { device_id: "" };
+  }
+
   _resolveEntities() {
     const all = Object.values(this.hass.entities || {});
     const mine = all.filter((e) => e.device_id === this._config.device_id);
@@ -307,6 +315,52 @@ class SpaCareCard extends LitElement {
 }
 
 customElements.define("spa-care-card", SpaCareCard);
+
+
+class SpaCareCardEditor extends LitElement {
+  static properties = {
+    hass: { attribute: false },
+    _config: { state: true },
+  };
+
+  static styles = css`
+    .editor {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 12px;
+    }
+  `;
+
+  setConfig(config) {
+    this._config = config || {};
+  }
+
+  _deviceChanged(ev) {
+    const newConfig = { ...this._config, device_id: ev.detail.value };
+    this.dispatchEvent(
+      new CustomEvent("config-changed", { detail: { config: newConfig } })
+    );
+  }
+
+  render() {
+    if (!this._config) return html``;
+    return html`
+      <div class="editor">
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{ device: { integration: "spa_care" } }}
+          .value=${this._config.device_id || ""}
+          label="Spa device"
+          @value-changed=${this._deviceChanged}
+        ></ha-selector>
+      </div>
+    `;
+  }
+}
+
+customElements.define("spa-care-card-editor", SpaCareCardEditor);
+
 
 window.customCards = window.customCards || [];
 window.customCards.push({
