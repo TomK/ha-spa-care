@@ -165,7 +165,7 @@ class SpaCareCard extends LitElement {
       tb: byKey("_total_bromine"),
       ph: byKey("_ph"),
       ta: byKey("_total_alkalinity"),
-      ch: byKey("_calcium_hardness"),
+      ch: byKey("_hardness"),
       tbOOR: byKey("_tb_out_of_range"),
       phOOR: byKey("_ph_out_of_range"),
       taOOR: byKey("_ta_out_of_range"),
