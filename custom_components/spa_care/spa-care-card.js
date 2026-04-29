@@ -44,14 +44,19 @@ class SpaCareCard extends LitElement {
       margin-bottom: 16px;
     }
     .row {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 90px 32px 24px;
       align-items: center;
       gap: 12px;
       padding: 6px 0;
     }
-    .row .label { flex: 1; }
-    .row .input { width: 90px; }
-    .row .badge { width: 24px; text-align: center; }
+    .row .label { min-width: 0; }
+    .row .input { width: 100%; }
+    .row .unit {
+      color: var(--secondary-text-color);
+      font-size: 0.9em;
+    }
+    .row .badge { text-align: center; }
     .section-title {
       margin-top: 16px;
       font-weight: 500;
@@ -240,8 +245,8 @@ class SpaCareCard extends LitElement {
           .value=${isUnknown ? "" : value}
           @change=${onChange}
         />
-        ${unit ? html`<span>${unit}</span>` : ""}
-        ${badge}
+        <span class="unit">${unit ?? ""}</span>
+        ${badge || html`<span class="badge"></span>`}
       </div>
     `;
   }
