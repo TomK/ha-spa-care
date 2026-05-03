@@ -188,17 +188,20 @@ class SpaCareCard extends LitElement {
     return this.hass.devices?.[this._config.device_id] ?? null;
   }
 
-  _statusText(testDueState) {
-    if (!testDueState) return "";
-    const reasons = testDueState.attributes?.reasons || [];
-    if (testDueState.state !== "on") return "✅ All good";
-    const set = new Set(reasons);
-    if (set.has("post_dose") && set.has("routine")) {
-      return "🔔 Retest pending — also overdue";
+  _statusText(testDueState, recommendedState) {
+    if (testDueState?.state === "on") {
+      const set = new Set(testDueState.attributes?.reasons || []);
+      if (set.has("post_dose") && set.has("routine")) {
+        return "🔔 Retest pending — also overdue";
+      }
+      if (set.has("post_dose")) return "⏱ Retest pending";
+      if (set.has("routine")) return "🔔 Test overdue (no reading in 5+ days)";
+      return "⚠️ Test due";
     }
-    if (set.has("post_dose")) return "⏱ Retest pending";
-    if (set.has("routine")) return "🔔 Test overdue (no reading in 5+ days)";
-    return "⚠️ Test due";
+    const actions = recommendedState?.attributes?.actions || [];
+    if (actions.length > 0) return "⚠️ Action needed";
+    if (!testDueState) return "";
+    return "✅ All good";
   }
 
   _renderReadingRow(label, numEntity, oorEntity, unit) {
@@ -402,10 +405,11 @@ class SpaCareCard extends LitElement {
     }
     const title = device.name_by_user || device.name || "Spa Care";
     const testDueState = this.hass.states[entities.testDue?.entity_id];
+    const recommendedState = this.hass.states[entities.recommended?.entity_id];
     return html`
       <ha-card>
         <div class="header">${title}</div>
-        <div class="status">${this._statusText(testDueState)}</div>
+        <div class="status">${this._statusText(testDueState, recommendedState)}</div>
         ${this._renderReadingRow("Total Bromine", entities.tb, entities.tbOOR, "ppm")}
         ${this._renderReadingRow("pH", entities.ph, entities.phOOR, "")}
         ${this._renderReadingRow("Total Alkalinity", entities.ta, entities.taOOR, "ppm")}

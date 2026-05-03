@@ -1,7 +1,7 @@
 {
   "domain": "spa_care",
   "name": "Spa Care",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "documentation": "https://github.com/TomK/ha-spa-care",
   "issue_tracker": "https://github.com/TomK/ha-spa-care/issues",
   "codeowners": ["@TomK"],
