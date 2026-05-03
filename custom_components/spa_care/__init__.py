@@ -61,10 +61,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await _async_register_card(hass)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    async def _hourly_tick(_now) -> None:
+        await coord.async_hourly_tick()
+
     entry.async_on_unload(
         async_track_time_interval(
             hass,
-            lambda _now: hass.async_create_task(coord.async_hourly_tick()),
+            _hourly_tick,
             interval=timedelta(seconds=HOURLY_TICK_SECONDS),
         )
     )
