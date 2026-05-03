@@ -11,6 +11,7 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.loader import async_get_integration
 
 from .const import CONF_NAME, CONF_VOLUME_L, DOMAIN, HOURLY_TICK_SECONDS, PLATFORMS
 from .coordinator import SpaCareCoordinator
@@ -28,6 +29,9 @@ async def _async_register_card(hass: HomeAssistant) -> None:
 
     Idempotent across config-entry reloads. Only the first call actually
     registers the static path + extra JS URL; subsequent calls short-circuit.
+    The extra-JS URL carries the manifest version as a query string so
+    each release is a distinct URL — bypasses the Android/iOS app's
+    aggressive script-cache without forcing a manual reload.
     """
     if hass.data.get(DOMAIN, {}).get(_CARD_REGISTERED_FLAG):
         return
@@ -35,13 +39,15 @@ async def _async_register_card(hass: HomeAssistant) -> None:
     if not card_path.exists():
         _LOGGER.warning("spa_care: bundled card %s not found; skipping", card_path)
         return
+    integration = await async_get_integration(hass, DOMAIN)
+    versioned_url = f"{CARD_URL}?v={integration.version}"
     try:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(CARD_URL, str(card_path), False)]
         )
-        add_extra_js_url(hass, CARD_URL)
+        add_extra_js_url(hass, versioned_url)
         hass.data.setdefault(DOMAIN, {})[_CARD_REGISTERED_FLAG] = True
-        _LOGGER.info("spa_care: registered card at %s", CARD_URL)
+        _LOGGER.info("spa_care: registered card at %s", versioned_url)
     except Exception:
         _LOGGER.exception("spa_care: failed to register frontend card")
 
