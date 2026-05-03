@@ -157,8 +157,12 @@ class SpaCareCoordinator(DataUpdateCoordinator[None]):
             # event handler rather than risk a tight retry loop.
             self.suppressions[(category, subject)] = now
             self.hass.bus.async_fire(f"{DOMAIN}.nudge", action.payload)
-            # Persistent notification, fire-and-forget.
-            self.hass.async_create_task(self._notify(action.payload["message"]))
+            # Only the "go test the water" prompt becomes a persistent
+            # notification. Out-of-range / schedule / retest nudges stay on
+            # the bus for automations; the Recommended Action sensor is the
+            # primary surface for current state and treatment.
+            if category == "test_overdue":
+                self.hass.async_create_task(self._notify(action.payload["message"]))
         # set_entity / create_notification kinds reserved for future Actions.
 
     async def _notify(self, message: str) -> None:
