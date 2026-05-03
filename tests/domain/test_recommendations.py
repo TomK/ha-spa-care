@@ -48,19 +48,31 @@ def test_multiple_out_of_range_returns_ranked_list_tb_first():
     assert recs[1].product_key == "dry_acid"              # then pH
 
 
-def test_out_of_band_reading_returns_recheck_recommendation():
+def test_out_of_band_reading_still_emits_advice_with_strip_hint():
+    # TB way above hard_max: advice still fires (stop dosing, decay) and
+    # the reason carries a "double-check the strip" hint.
     r = _r(total_bromine=99.0, ph=7.4, total_alkalinity=100, calcium_hardness=180)
     recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
     assert len(recs) == 1
-    assert recs[0].product_key == "__recheck__"
-    assert "tb" in recs[0].reason.lower()
+    assert recs[0].product_key == "__advice__"
+    assert "double-check" in recs[0].reason.lower()
 
 
-def test_low_tb_above_hard_max_does_not_recommend_dose():
-    # If user has somehow logged TB way above hard max, don't recommend dosing
+def test_out_of_band_reading_does_not_recommend_a_dose():
+    # No tb-lower product exists, so OOB never produces a dose action.
     r = _r(total_bromine=99.0)
     recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
-    assert all(rec.product_key == "__recheck__" for rec in recs)
+    assert all(rec.amount == 0 for rec in recs)
+
+
+def test_out_of_band_high_ph_recommends_dry_acid_with_strip_hint():
+    # pH way above hard_max=9.0 still gets the standard pH-down treatment
+    # — out-of-band shouldn't suppress an actionable dose.
+    r = _r(ph=10.0)
+    recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
+    rec = next(r for r in recs if r.product_key == "dry_acid")
+    assert rec.amount > 0
+    assert "double-check" in rec.reason.lower()
 
 
 def test_partial_data_only_evaluates_reported_readings():
@@ -104,15 +116,14 @@ def test_advice_mixes_with_dose_recommendations():
     assert recs[1].product_key == "__advice__"            # CH priority 4
 
 
-def test_recheck_does_not_suppress_other_readings():
-    # TB at hard_max=20 (high — advice) + pH > hard_max=8.4 (recheck).
-    # Both should be returned; advice should not be hidden by the recheck.
-    r = _r(total_bromine=20.0, ph=9.0, total_alkalinity=100, calcium_hardness=180)
+def test_out_of_band_reading_does_not_suppress_other_recommendations():
+    # TB out-of-band (35 > hard_max=30) still produces advice; an in-band
+    # high pH still produces its dose recommendation alongside.
+    r = _r(total_bromine=35.0, ph=7.9, total_alkalinity=100, calcium_hardness=180)
     recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
     assert len(recs) == 2
-    keys = [rec.product_key for rec in recs]
-    assert "__advice__" in keys  # TB high → advice
-    assert "__recheck__" in keys  # pH out-of-band → recheck
     # TB priority 1 → first; pH priority 2 → second
     assert recs[0].product_key == "__advice__"
-    assert recs[1].product_key == "__recheck__"
+    assert "double-check" in recs[0].reason.lower()
+    assert recs[1].product_key == "dry_acid"
+    assert "double-check" not in recs[1].reason.lower()  # in-band, no hint

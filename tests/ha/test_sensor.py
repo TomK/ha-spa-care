@@ -76,16 +76,18 @@ def test_recommended_action_sensor_multiple_actions_joined_in_priority_order():
     assert " · " in value
 
 
-def test_recommended_action_sensor_recheck_lists_all_oob_reasons():
+def test_recommended_action_sensor_oob_still_lists_advice_for_each_reading():
+    # Both readings out of band: each still contributes a recommendation
+    # (advice for TB, dose for pH) with a verify-strip hint.
     coord = _coord(Reading(
         timestamp=datetime.now(timezone.utc),
-        total_bromine=99.0, ph=99.0,  # both out of band
+        total_bromine=99.0, ph=10.0,
     ))
     s = RecommendedActionSensor(coord, entry_id="x")
     value = s.native_value.lower()
     assert "tb" in value
-    assert "ph" in value
-    assert "recheck" in value
+    assert "ph down" in value or "ph " in value
+    assert "double-check" in value
 
 
 def test_recommended_action_sensor_attributes_actions_list():
@@ -110,7 +112,7 @@ def test_recommended_action_sensor_attributes_empty_when_in_range():
     assert s.extra_state_attributes == {"actions": []}
 
 
-def test_recommended_action_sensor_attributes_recheck_uses_reason_text():
+def test_recommended_action_sensor_attributes_oob_uses_reason_text():
     coord = _coord(Reading(
         timestamp=datetime.now(timezone.utc),
         total_bromine=99.0,
@@ -118,7 +120,7 @@ def test_recommended_action_sensor_attributes_recheck_uses_reason_text():
     s = RecommendedActionSensor(coord, entry_id="x")
     actions = s.extra_state_attributes["actions"]
     assert len(actions) == 1
-    assert "recheck" in actions[0].lower()
+    assert "double-check" in actions[0].lower()
 
 
 def test_next_retest_at_returns_dose_timestamp_plus_delay():
