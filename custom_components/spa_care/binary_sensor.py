@@ -106,4 +106,11 @@ class OutOfRangeBinarySensor(SpaCareEntity, BinarySensorEntity):
         if value is None:
             return False
         target = self.coordinator.targets[self._reading_key]
-        return classify_reading(value, target) is not ReadingState.IN_RANGE
+        state = classify_reading(value, target)
+        if state is ReadingState.IN_RANGE:
+            return False
+        # High CH has no practical fix in hard-water areas, so don't badge
+        # it as out-of-range — keep the reading visible without nagging.
+        if self._reading_key == "ch" and value > target.target_high:
+            return False
+        return True

@@ -91,12 +91,19 @@ def test_high_ta_returns_advice_recommendation():
     assert "ph down" in advice[0].reason.lower() or "aerate" in advice[0].reason.lower()
 
 
-def test_high_ch_returns_advice_recommendation():
-    r = _r(total_bromine=4.0, ph=7.4, total_alkalinity=100, calcium_hardness=320)
+def test_high_ch_produces_no_recommendation():
+    # High CH has no practical fix in hard-water areas, so we deliberately
+    # stay quiet rather than recommending an unhelpful water change.
+    r = _r(total_bromine=4.0, ph=7.4, total_alkalinity=100, calcium_hardness=800)
     recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
-    advice = [rec for rec in recs if rec.product_key == "__advice__"]
-    assert len(advice) == 1
-    assert "partial water change" in advice[0].reason.lower()
+    assert recs == []
+
+
+def test_low_ch_still_recommends_ch_up():
+    # Low CH does have a fix and should still alert.
+    r = _r(total_bromine=4.0, ph=7.4, total_alkalinity=100, calcium_hardness=50)
+    recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
+    assert any(rec.product_key == "ch_up" for rec in recs)
 
 
 def test_high_tb_returns_advice_recommendation():
@@ -108,12 +115,12 @@ def test_high_tb_returns_advice_recommendation():
 
 
 def test_advice_mixes_with_dose_recommendations():
-    # TB low (dose) + CH high (advice) — both appear, in priority order
-    r = _r(total_bromine=2.0, ph=7.4, total_alkalinity=100, calcium_hardness=320)
+    # TB low (dose) + TA high (advice) — both appear, in priority order.
+    r = _r(total_bromine=2.0, ph=7.4, total_alkalinity=180, calcium_hardness=180)
     recs = evaluate_reading(r, DEFAULT_TARGETS, VOLUME_L)
     assert len(recs) == 2
     assert recs[0].product_key == "brominating_granules"  # TB priority 1
-    assert recs[1].product_key == "__advice__"            # CH priority 4
+    assert recs[1].product_key == "__advice__"            # TA priority 3
 
 
 def test_out_of_band_reading_does_not_suppress_other_recommendations():

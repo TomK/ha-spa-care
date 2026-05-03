@@ -34,6 +34,11 @@ _PPM_DELTA_UNIT_TA_CH = 10.0
 # chemical fix has tricky knock-on effects). Emitted as Recommendation with
 # product_key="__advice__"; the card and sensor render the reason text
 # directly; the Log Recommended Doses button skips them (amount=0).
+#
+# High CH is intentionally absent: in hard-water areas the only "fix" is a
+# partial water change with equally-hard refill, which doesn't meaningfully
+# lower hardness. Silently letting the reading sit is more honest than a
+# recommendation the user can't act on.
 _ADVICE_FOR: dict[tuple[str, str], str] = {
     ("tb", "lower"): (
         "TB is {value} ppm (above target). Stop adding tablets; bromine "
@@ -43,11 +48,6 @@ _ADVICE_FOR: dict[tuple[str, str], str] = {
         "TA is {value} ppm (above target). pH down lowers TA but also "
         "drops pH — dose carefully, then aerate (jets on, no cover) for "
         "an hour to bring pH back up. Or do a partial water change."
-    ),
-    ("ch", "lower"): (
-        "CH is {value} ppm (above target). Calcium hardness can't be "
-        "lowered chemically. Standard fix: partial water change (drain "
-        "25-50%, refill). Spa No Scale helps prevent scale in the meantime."
     ),
 }
 

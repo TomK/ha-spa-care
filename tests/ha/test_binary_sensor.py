@@ -102,3 +102,20 @@ def test_out_of_range_false_when_value_in_target():
     coord = _coord(last_reading=Reading(timestamp=datetime.now(timezone.utc), total_bromine=4.0))
     s = OutOfRangeBinarySensor(coord, entry_id="x", reading_key="tb", name="TB Out of Range")
     assert s.is_on is False
+
+
+def test_ch_high_does_not_badge_as_out_of_range():
+    # High CH has no chemical fix in hard-water areas — keep the badge off.
+    coord = _coord(last_reading=Reading(
+        timestamp=datetime.now(timezone.utc), calcium_hardness=800,
+    ))
+    s = OutOfRangeBinarySensor(coord, entry_id="x", reading_key="ch", name="CH Out of Range")
+    assert s.is_on is False
+
+
+def test_ch_low_still_badges_as_out_of_range():
+    coord = _coord(last_reading=Reading(
+        timestamp=datetime.now(timezone.utc), calcium_hardness=50,
+    ))
+    s = OutOfRangeBinarySensor(coord, entry_id="x", reading_key="ch", name="CH Out of Range")
+    assert s.is_on is True
